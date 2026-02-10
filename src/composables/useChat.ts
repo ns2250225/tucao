@@ -5,6 +5,27 @@ export interface User {
   id: string;
   name: string;
   joinedAt: number;
+  money?: number;
+}
+
+export interface RedPacketGrabbedRecord {
+  userId: string;
+  userName: string;
+  amount: number;
+  timestamp: number;
+}
+
+export interface RedPacketDetail {
+  id: string;
+  senderId: string;
+  senderName: string;
+  totalAmount: number;
+  totalCount: number;
+  remainingAmount: number;
+  remainingCount: number;
+  message: string;
+  grabbedList: RedPacketGrabbedRecord[];
+  timestamp: number;
 }
 
 export interface Message {
@@ -14,7 +35,8 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system';
+  type: 'user' | 'system' | 'redPacket';
+  redPacketId?: string;
 }
 
 const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
@@ -30,37 +52,16 @@ const state = reactive({
   isConnected: false
 });
 
+// Event-related reactive state
+const lastGrabResult = ref<{ success: boolean; amount?: number; message?: string; detail?: RedPacketDetail } | null>(null);
+const lastError = ref<string | null>(null);
+
 // Reactive timestamp to trigger periodic updates for message expiration
 const now = ref(Date.now());
 let timeInterval: any;
 
-export function useChat() {
-  const connect = () => {
-    socket.connect();
-  };
-
-  const disconnect = () => {
-    socket.disconnect();
-  };
-
-  const sendMessage = (text: string, image: string | null = null) => {
-    socket.emit('sendMessage', { text, image });
-  };
-
-  const updateName = (name: string) => {
-    socket.emit('updateName', name);
-    // Optimistic update
-    if (state.currentUser) {
-      state.currentUser.name = name;
-    }
-  };
-
-  // Filter messages older than 30 minutes
-  const visibleMessages = computed(() => {
-    const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
-    return state.messages.filter(msg => msg.timestamp > thirtyMinutesAgo);
-  });
-
+// Initialize socket listeners only once
+export function initChat() {
   onMounted(() => {
     // Start timer to update 'now'
     timeInterval = setInterval(() => {
@@ -96,15 +97,25 @@ export function useChat() {
       if (index !== -1) {
         state.users[index] = updatedUser;
       }
-      // Also update messages sender name if needed? 
-      // Usually message sender name is snapshot, but we can update it if we want "live" names.
-      // For "Tucao", snapshot names are fine, but live names are also good.
-      // Let's stick to snapshot for history integrity, or update if we want consistency.
-      // User request: "用户可以设置修改自己的名字"
+      // Update current user if it is me
+      if (state.currentUser && state.currentUser.id === updatedUser.id) {
+        state.currentUser = updatedUser;
+      }
     });
 
     socket.on('newMessage', (message: Message) => {
       state.messages.push(message);
+    });
+
+    socket.on('grabResult', (result) => {
+      lastGrabResult.value = result;
+      // Reset after a short delay so we can react to same result if needed, or handle in UI
+      // For now just keep it, UI should watch it
+    });
+
+    socket.on('error', (msg: string) => {
+      lastError.value = msg;
+      setTimeout(() => { lastError.value = null; }, 3000);
     });
   });
 
@@ -117,6 +128,45 @@ export function useChat() {
     socket.off('userLeft');
     socket.off('userUpdated');
     socket.off('newMessage');
+    socket.off('grabResult');
+    socket.off('error');
+  });
+}
+
+export function useChat() {
+  const connect = () => {
+    socket.connect();
+  };
+
+  const disconnect = () => {
+    socket.disconnect();
+  };
+
+  const sendMessage = (text: string, image: string | null = null) => {
+    socket.emit('sendMessage', { text, image });
+  };
+
+  const updateName = (name: string) => {
+    socket.emit('updateName', name);
+    // Optimistic update
+    if (state.currentUser) {
+      state.currentUser.name = name;
+    }
+  };
+
+  const sendRedPacket = (amount: number, count: number, message: string) => {
+    console.log('Sending red packet:', { amount, count, message });
+    socket.emit('sendRedPacket', { amount, count, message });
+  };
+
+  const grabRedPacket = (redPacketId: string) => {
+    socket.emit('grabRedPacket', redPacketId);
+  };
+
+  // Filter messages older than 30 minutes
+  const visibleMessages = computed(() => {
+    const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
+    return state.messages.filter(msg => msg.timestamp > thirtyMinutesAgo);
   });
 
   return {
@@ -125,6 +175,10 @@ export function useChat() {
     connect,
     disconnect,
     sendMessage,
-    updateName
+    updateName,
+    sendRedPacket,
+    grabRedPacket,
+    lastGrabResult,
+    lastError
   };
 }

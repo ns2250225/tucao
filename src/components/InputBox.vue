@@ -35,6 +35,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </button>
+
+          <button 
+            @click="showRedPacketModal = true"
+            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-red-500 transition-colors"
+            title="发红包"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+
           <input 
             type="file" 
             ref="fileInput" 
@@ -74,12 +85,61 @@
       </svg>
     </button>
   </div>
+
+  <!-- Red Packet Modal -->
+  <div v-if="showRedPacketModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border-2 border-red-200">
+      <div class="bg-red-500 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clip-rule="evenodd" />
+            <path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z" />
+          </svg>
+          发红包
+        </h3>
+        <button @click="showRedPacketModal = false" class="hover:bg-red-600 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">总金额</label>
+          <div class="relative">
+            <input v-model.number="rpAmount" type="number" min="0.01" step="0.01" class="w-full border-2 border-gray-200 rounded-lg p-2 pr-8 focus:border-red-500 focus:outline-none transition-colors" placeholder="0.00" />
+            <span class="absolute right-3 top-2 text-gray-400 font-bold">¥</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">红包个数</label>
+          <div class="relative">
+            <input v-model.number="rpCount" type="number" min="1" step="1" class="w-full border-2 border-gray-200 rounded-lg p-2 pr-8 focus:border-red-500 focus:outline-none transition-colors" placeholder="1" />
+            <span class="absolute right-3 top-2 text-gray-400 font-bold">个</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">祝福语</label>
+          <input v-model="rpMessage" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-red-500 focus:outline-none transition-colors" placeholder="恭喜发财，大吉大利" />
+        </div>
+        <button 
+          @click="handleSendRedPacket" 
+          class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          塞钱进红包
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
+import { useChat } from '../composables/useChat';
+
+const { sendRedPacket } = useChat();
 
 const emit = defineEmits<{
   (e: 'send', text: string, image: string | null): void;
@@ -89,6 +149,38 @@ const text = ref('');
 const showEmojiPicker = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const imagePreview = ref<string | null>(null);
+
+// Red Packet State
+const showRedPacketModal = ref(false);
+const rpAmount = ref<number | null>(null);
+const rpCount = ref<number | null>(null);
+const rpMessage = ref('');
+
+const handleSendRedPacket = () => {
+  console.log('Attempting to send red packet:', { amount: rpAmount.value, count: rpCount.value });
+  
+  if (!rpAmount.value || rpAmount.value <= 0) {
+    alert('请输入有效的金额');
+    return;
+  }
+  
+  if (!rpCount.value || rpCount.value <= 0) {
+    alert('请输入有效的红包个数');
+    return;
+  }
+  
+  if (!Number.isInteger(rpCount.value)) {
+    alert('红包个数必须是整数');
+    return;
+  }
+
+  sendRedPacket(rpAmount.value, rpCount.value, rpMessage.value || '恭喜发财，大吉大利');
+  showRedPacketModal.value = false;
+  // Reset fields
+  rpAmount.value = null;
+  rpCount.value = null;
+  rpMessage.value = '';
+};
 
 const toggleEmojiPicker = () => {
   showEmojiPicker.value = !showEmojiPicker.value;
@@ -123,6 +215,14 @@ const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     const file = target.files[0];
+    
+    // Limit file size to 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      alert('图片大小不能超过 10MB');
+      target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       imagePreview.value = e.target?.result as string;
