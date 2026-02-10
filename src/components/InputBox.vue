@@ -46,6 +46,17 @@
             </svg>
           </button>
 
+          <button 
+            @click="handleSendFireworks"
+            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-purple-500 transition-colors"
+            title="放烟花"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a1 1 0 011 1v4a1 1 0 11-2 0V3a1 1 0 011-1zM4.929 4.929a1 1 0 011.414 0l2.828 2.828a1 1 0 11-1.414 1.414L4.93 6.343a1 1 0 010-1.414zM19.071 4.929a1 1 0 010 1.414l-2.828 2.828a1 1 0 11-1.414-1.414l2.828-2.828a1 1 0 011.414 0z" />
+            </svg>
+          </button>
+
           <input 
             type="file" 
             ref="fileInput" 
@@ -139,7 +150,11 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat } from '../composables/useChat';
 
-const { sendRedPacket } = useChat();
+const { sendRedPacket, sendFireworks } = useChat();
+
+const handleSendFireworks = () => {
+  sendFireworks();
+};
 
 const emit = defineEmits<{
   (e: 'send', text: string, image: string | null): void;

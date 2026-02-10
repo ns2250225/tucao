@@ -55,6 +55,7 @@ const state = reactive({
 // Event-related reactive state
 const lastGrabResult = ref<{ success: boolean; amount?: number; message?: string; detail?: RedPacketDetail } | null>(null);
 const lastError = ref<string | null>(null);
+const fireworksSignal = ref(0);
 
 // Reactive timestamp to trigger periodic updates for message expiration
 const now = ref(Date.now());
@@ -117,6 +118,10 @@ export function initChat() {
       lastError.value = msg;
       setTimeout(() => { lastError.value = null; }, 3000);
     });
+
+    socket.on('fireworks', () => {
+      fireworksSignal.value = Date.now();
+    });
   });
 
   onUnmounted(() => {
@@ -130,6 +135,7 @@ export function initChat() {
     socket.off('newMessage');
     socket.off('grabResult');
     socket.off('error');
+    socket.off('fireworks');
   });
 }
 
@@ -163,6 +169,10 @@ export function useChat() {
     socket.emit('grabRedPacket', redPacketId);
   };
 
+  const sendFireworks = () => {
+    socket.emit('sendFireworks');
+  };
+
   // Filter messages older than 30 minutes
   const visibleMessages = computed(() => {
     const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
@@ -178,7 +188,9 @@ export function useChat() {
     updateName,
     sendRedPacket,
     grabRedPacket,
+    sendFireworks,
     lastGrabResult,
-    lastError
+    lastError,
+    fireworksSignal
   };
 }

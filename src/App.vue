@@ -11,6 +11,19 @@
         </h1>
       </div>
       <div class="flex items-center gap-4">
+        <!-- Mobile User List Toggle -->
+        <button 
+          @click="showMobileUserList = true"
+          class="lg:hidden p-2 rounded-full hover:bg-secondary/20 text-primary transition-colors relative"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white">
+            {{ state.users.length }}
+          </span>
+        </button>
+
         <div v-if="state.currentUser" class="flex items-center gap-1 bg-yellow-100 px-3 py-1 rounded-full border-2 border-yellow-300 text-yellow-800 font-bold shadow-sm">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-600" viewBox="0 0 20 20" fill="currentColor">
             <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
@@ -49,6 +62,30 @@
       </div>
     </main>
   </div>
+
+  <!-- Mobile User List Drawer -->
+  <div v-if="showMobileUserList" class="fixed inset-0 z-50 lg:hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="showMobileUserList = false"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-80 bg-background shadow-2xl transform transition-transform duration-300 ease-out flex flex-col">
+      <div class="p-4 bg-primary text-white flex justify-between items-center shrink-0">
+        <h2 class="font-serif text-xl font-bold">用户列表</h2>
+        <button @click="showMobileUserList = false" class="p-1 hover:bg-white/20 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="flex-1 overflow-hidden p-4">
+        <UserList 
+          :users="state.users" 
+          :currentUserId="state.currentUser?.id"
+          :currentUserName="state.currentUser?.name"
+          @updateName="updateName"
+        />
+      </div>
+    </div>
+  </div>
+
   <!-- Global Error Toast -->
   <div v-if="lastError" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[200] bg-red-500 text-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 animate-bounce">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -56,19 +93,78 @@
     </svg>
     {{ lastError }}
   </div>
+
+  <!-- Fireworks Text Overlay -->
+  <Transition name="fade">
+    <div v-if="showFireworksText" class="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none">
+      <div class="text-6xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-red-500 to-yellow-300 animate-pulse drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] transform scale-100 transition-transform duration-500" style="text-shadow: 0 0 20px rgba(255,215,0,0.5);">
+        新年快乐
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, watch, ref } from 'vue';
 import { useChat, initChat } from './composables/useChat';
 import ChatBox from './components/ChatBox.vue';
 import UserList from './components/UserList.vue';
 import InputBox from './components/InputBox.vue';
+import confetti from 'canvas-confetti';
 
 // Initialize socket listeners
 initChat();
 
-const { state, visibleMessages, connect, sendMessage, updateName, lastError } = useChat();
+const { state, visibleMessages, connect, sendMessage, updateName, lastError, fireworksSignal } = useChat();
+
+const showMobileUserList = ref(false);
+const showFireworksText = ref(false);
+
+watch(fireworksSignal, () => {
+  // Show text
+  showFireworksText.value = true;
+  
+  const duration = 5 * 1000;
+  
+  // Hide text after duration
+  setTimeout(() => {
+    showFireworksText.value = false;
+  }, duration);
+
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+  const randomInRange = (min: number, max: number) => {
+    return Math.random() * (max - min) + min;
+  }
+
+  const interval: any = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+
+    if (timeLeft <= 0) {
+      return clearInterval(interval);
+    }
+
+    const particleCount = 100 * (timeLeft / duration); // Increased particle count for density
+    
+    // Determine origins based on screen width
+    // On mobile, spread fireworks more towards the center or cover full width
+    if (window.innerWidth < 768) {
+       // Mobile: Launch from multiple points
+       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.4), y: Math.random() - 0.2 } });
+       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.6, 0.9), y: Math.random() - 0.2 } });
+       // Add center burst for mobile
+       if (Math.random() > 0.7) {
+         confetti({ ...defaults, particleCount: particleCount / 2, origin: { x: 0.5, y: 0.3 } });
+       }
+    } else {
+       // Desktop: Original behavior + density
+       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+    }
+    
+  }, 200); // Faster interval for more frequent bursts
+});
 
 onMounted(() => {
   connect();
@@ -80,5 +176,15 @@ onMounted(() => {
 body {
   margin: 0;
   overflow: hidden; /* Prevent body scroll */
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 1s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

@@ -208,6 +208,12 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle fireworks
+  socket.on('sendFireworks', () => {
+    // Broadcast fireworks to all clients
+    io.emit('fireworks');
+  });
+
   // Handle new message
   socket.on('sendMessage', (payload) => {
     // payload can be string (legacy) or object { text, image }
