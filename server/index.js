@@ -21,6 +21,8 @@ const users = {};
 let messages = [];
 // Store red packets: { id: { ... } }
 const redPackets = {};
+// Store lotteries: { id: { ... } }
+const lotteries = {};
 
 // Cleanup routine: remove messages older than 30 minutes
 const MESSAGE_LIFETIME = 30 * 60 * 1000; // 30 minutes in ms
@@ -30,10 +32,17 @@ setInterval(() => {
   const initialCount = messages.length;
   messages = messages.filter(msg => now - msg.timestamp < MESSAGE_LIFETIME);
   
-  // Cleanup old red packets (optional, maybe keep them a bit longer or same)
+  // Handle red packets cleanup
   for (const id in redPackets) {
     if (now - redPackets[id].timestamp > MESSAGE_LIFETIME) {
       delete redPackets[id];
+    }
+  }
+
+  // Handle lotteries cleanup
+  for (const id in lotteries) {
+    if (now - lotteries[id].timestamp > MESSAGE_LIFETIME) {
+      delete lotteries[id];
     }
   }
 
@@ -241,6 +250,121 @@ io.on('connection', (socket) => {
 
     messages.push(message);
     io.emit('newMessage', message);
+  });
+
+  // Handle send Lottery
+  socket.on('sendLottery', (payload) => {
+    console.log(`[Lottery] User ${socket.id} creating lottery:`, payload);
+    const { prizeImage, contactInfo, maxParticipants } = payload;
+    const user = users[socket.id];
+    
+    if (!user) return;
+    if (!maxParticipants || maxParticipants <= 0) return;
+
+    const lotteryId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    const lottery = {
+      id: lotteryId,
+      creatorId: user.id,
+      creatorName: user.name,
+      prizeImage: prizeImage || null,
+      contactInfo: contactInfo,
+      maxParticipants: parseInt(maxParticipants),
+      participants: [],
+      winnerId: null,
+      winnerName: null,
+      status: 'active', // active, finished
+      timestamp: Date.now()
+    };
+    
+    lotteries[lotteryId] = lottery;
+
+    // Create a message for the lottery
+    const chatMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      text: '发布了一个抽奖活动',
+      senderId: user.id,
+      senderName: user.name,
+      timestamp: Date.now(),
+      type: 'lottery',
+      lotteryId: lotteryId,
+      lotteryData: {
+        prizeImage: lottery.prizeImage,
+        maxParticipants: lottery.maxParticipants,
+        currentParticipants: 0,
+        status: 'active',
+        contactInfo: null // Hide contact info initially
+      }
+    };
+
+    messages.push(chatMessage);
+    io.emit('newMessage', chatMessage);
+  });
+
+  // Handle join Lottery
+  socket.on('joinLottery', (lotteryId) => {
+    const user = users[socket.id];
+    const lottery = lotteries[lotteryId];
+
+    if (!lottery) {
+      socket.emit('error', '抽奖活动不存在或已过期');
+      return;
+    }
+
+    if (lottery.status !== 'active') {
+      socket.emit('error', '抽奖活动已结束');
+      return;
+    }
+
+    // Check if already joined
+    if (lottery.participants.some(p => p.userId === user.id)) {
+      socket.emit('error', '你已经参与过该活动了');
+      return;
+    }
+
+    // Add participant
+    lottery.participants.push({
+      userId: user.id,
+      userName: user.name,
+      timestamp: Date.now()
+    });
+
+    // Check if full
+    if (lottery.participants.length >= lottery.maxParticipants) {
+      // Pick a winner
+      const winnerIndex = Math.floor(Math.random() * lottery.participants.length);
+      const winner = lottery.participants[winnerIndex];
+      
+      lottery.winnerId = winner.userId;
+      lottery.winnerName = winner.userName;
+      lottery.status = 'finished';
+      
+      // Update message
+      const msgIndex = messages.findIndex(m => m.lotteryId === lotteryId);
+      if (msgIndex !== -1) {
+        messages[msgIndex].lotteryData = {
+          ...messages[msgIndex].lotteryData,
+          currentParticipants: lottery.participants.length,
+          status: 'finished',
+          winnerName: lottery.winnerName,
+          winnerId: lottery.winnerId,
+          contactInfo: lottery.contactInfo // Reveal contact info
+        };
+        
+        io.emit('messageUpdated', messages[msgIndex]);
+      }
+    } else {
+      // Update message progress
+      const msgIndex = messages.findIndex(m => m.lotteryId === lotteryId);
+      if (msgIndex !== -1) {
+        messages[msgIndex].lotteryData = {
+          ...messages[msgIndex].lotteryData,
+          currentParticipants: lottery.participants.length
+        };
+        
+        io.emit('messageUpdated', messages[msgIndex]);
+      }
+    }
   });
 
   // Handle disconnect

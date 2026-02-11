@@ -48,12 +48,23 @@
 
           <button 
             @click="handleSendFireworks"
-            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-purple-500 transition-colors"
+            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="放烟花"
+            :disabled="isFireworksCoolingDown"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a1 1 0 011 1v4a1 1 0 11-2 0V3a1 1 0 011-1zM4.929 4.929a1 1 0 011.414 0l2.828 2.828a1 1 0 11-1.414 1.414L4.93 6.343a1 1 0 010-1.414zM19.071 4.929a1 1 0 010 1.414l-2.828 2.828a1 1 0 11-1.414-1.414l2.828-2.828a1 1 0 011.414 0z" />
+            </svg>
+          </button>
+
+          <button 
+            @click="showLotteryModal = true"
+            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-blue-500 transition-colors"
+            title="发布抽奖活动"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
             </svg>
           </button>
 
@@ -142,6 +153,66 @@
       </div>
     </div>
   </div>
+  <!-- Lottery Modal -->
+  <div v-if="showLotteryModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border-2 border-blue-200">
+      <div class="bg-blue-500 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+          </svg>
+          发布抽奖活动
+        </h3>
+        <button @click="showLotteryModal = false" class="hover:bg-blue-600 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">奖品图片</label>
+          <div 
+            @click="triggerLotteryImageUpload" 
+            class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors h-32 flex flex-col items-center justify-center relative overflow-hidden"
+          >
+            <template v-if="!lotteryImagePreview">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span class="text-sm text-gray-500">点击上传奖品图片</span>
+            </template>
+            <img v-else :src="lotteryImagePreview" class="absolute inset-0 w-full h-full object-cover" />
+            <input 
+              type="file" 
+              ref="lotteryFileInput" 
+              accept="image/*" 
+              class="hidden" 
+              @change="handleLotteryFileChange"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">参与人数</label>
+          <div class="relative">
+            <input v-model.number="lotteryMaxParticipants" type="number" min="1" step="1" class="w-full border-2 border-gray-200 rounded-lg p-2 pr-8 focus:border-blue-500 focus:outline-none transition-colors" placeholder="1" />
+            <span class="absolute right-3 top-2 text-gray-400 font-bold">人</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">联系方式</label>
+          <input v-model="lotteryContactInfo" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-blue-500 focus:outline-none transition-colors" placeholder="手机号/微信号/邮箱" />
+        </div>
+        <button 
+          @click="handleSendLottery" 
+          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!lotteryMaxParticipants || !lotteryContactInfo"
+        >
+          发布活动
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -150,10 +221,19 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery } = useChat();
+
+const isFireworksCoolingDown = ref(false);
 
 const handleSendFireworks = () => {
+  if (isFireworksCoolingDown.value) return;
+  
   sendFireworks();
+  isFireworksCoolingDown.value = true;
+  
+  setTimeout(() => {
+    isFireworksCoolingDown.value = false;
+  }, 5000);
 };
 
 const emit = defineEmits<{
@@ -170,6 +250,64 @@ const showRedPacketModal = ref(false);
 const rpAmount = ref<number | null>(null);
 const rpCount = ref<number | null>(null);
 const rpMessage = ref('');
+
+// Lottery State
+const showLotteryModal = ref(false);
+const lotteryMaxParticipants = ref<number | null>(null);
+const lotteryContactInfo = ref('');
+const lotteryImagePreview = ref<string | null>(null);
+const lotteryFileInput = ref<HTMLInputElement | null>(null);
+
+const triggerLotteryImageUpload = () => {
+  lotteryFileInput.value?.click();
+};
+
+const handleLotteryFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    
+    // Limit file size to 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      alert('图片大小不能超过 10MB');
+      target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      lotteryImagePreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+  // Reset input
+  target.value = '';
+};
+
+const handleSendLottery = () => {
+  if (!lotteryMaxParticipants.value || lotteryMaxParticipants.value <= 0) {
+    alert('请输入有效的参与人数');
+    return;
+  }
+  
+  if (!Number.isInteger(lotteryMaxParticipants.value)) {
+    alert('参与人数必须是整数');
+    return;
+  }
+  
+  if (!lotteryContactInfo.value.trim()) {
+    alert('请输入联系方式');
+    return;
+  }
+
+  sendLottery(lotteryImagePreview.value, lotteryContactInfo.value, lotteryMaxParticipants.value);
+  showLotteryModal.value = false;
+  
+  // Reset fields
+  lotteryMaxParticipants.value = null;
+  lotteryContactInfo.value = '';
+  lotteryImagePreview.value = null;
+};
 
 const handleSendRedPacket = () => {
   console.log('Attempting to send red packet:', { amount: rpAmount.value, count: rpCount.value });

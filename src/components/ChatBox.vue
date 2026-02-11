@@ -41,6 +41,48 @@
             </div>
           </div>
 
+          <!-- Lottery Message -->
+          <div v-else-if="msg.type === 'lottery'" class="w-full">
+            <div class="bg-blue-500 text-white p-3 rounded-t-lg min-w-[200px] space-y-3">
+              <div class="flex items-center gap-3 border-b border-white/20 pb-2">
+                <div class="bg-blue-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center">
+                   <span class="text-xl">🎁</span>
+                </div>
+                <div>
+                  <div class="font-bold text-sm">抽奖活动</div>
+                  <div class="text-xs opacity-80">
+                    参与人数: {{ msg.lotteryData?.currentParticipants || 0 }} / {{ msg.lotteryData?.maxParticipants }}
+                  </div>
+                </div>
+              </div>
+              
+              <div v-if="msg.lotteryData?.prizeImage" class="rounded-lg overflow-hidden border-2 border-white/20 bg-white/10 relative group">
+                <img :src="msg.lotteryData.prizeImage" class="w-full h-32 object-cover" />
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+              </div>
+
+              <div v-if="msg.lotteryData?.status === 'active'">
+                 <button 
+                   @click="handleJoinLottery(msg.lotteryId!)" 
+                   class="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold py-2 rounded-lg text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-1"
+                 >
+                   <span>👋</span> 点击参与
+                 </button>
+              </div>
+              <div v-else class="bg-white/20 p-2 rounded-lg text-xs space-y-2 animate-pulse-once">
+                <div class="font-bold text-center text-yellow-300 text-lg">🎉 已开奖 🎉</div>
+                <div class="text-center">中奖者: <span class="font-bold text-base">{{ msg.lotteryData?.winnerName }}</span></div>
+                <div v-if="msg.lotteryData?.contactInfo" class="bg-white text-blue-900 p-2 rounded font-mono text-center select-all border-2 border-blue-200">
+                  <div class="text-[10px] text-gray-500 mb-0.5">发起者联系方式</div>
+                  {{ msg.lotteryData.contactInfo }}
+                </div>
+              </div>
+            </div>
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+              拼手气抽奖
+            </div>
+          </div>
+
           <div v-else-if="msg.text" class="text-base break-words font-sans leading-relaxed">
             {{ msg.text }}
           </div>
@@ -104,7 +146,7 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, lastGrabResult } = useChat();
+const { grabRedPacket, joinLottery, lastGrabResult } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
 
 // Result Modal State
@@ -120,6 +162,10 @@ const formatTime = (timestamp: number) => {
 
 const handleGrabRedPacket = (id: string) => {
   grabRedPacket(id);
+};
+
+const handleJoinLottery = (id: string) => {
+  joinLottery(id);
 };
 
 // Watch for grab results
@@ -191,5 +237,13 @@ watch(() => props.messages.length, () => {
 }
 .animate-bounce-in {
   animation: bounce-in 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+}
+
+.animate-pulse-once {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1);
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
 }
 </style>

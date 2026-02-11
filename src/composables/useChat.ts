@@ -28,6 +28,16 @@ export interface RedPacketDetail {
   timestamp: number;
 }
 
+export interface LotteryData {
+  prizeImage: string | null;
+  maxParticipants: number;
+  currentParticipants: number;
+  status: 'active' | 'finished';
+  winnerName?: string;
+  winnerId?: string;
+  contactInfo?: string | null;
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -35,8 +45,10 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system' | 'redPacket';
+  type: 'user' | 'system' | 'redPacket' | 'lottery';
   redPacketId?: string;
+  lotteryId?: string;
+  lotteryData?: LotteryData;
 }
 
 const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
@@ -108,6 +120,13 @@ export function initChat() {
       state.messages.push(message);
     });
 
+    socket.on('messageUpdated', (updatedMsg: Message) => {
+      const index = state.messages.findIndex(m => m.id === updatedMsg.id);
+      if (index !== -1) {
+        state.messages[index] = updatedMsg;
+      }
+    });
+
     socket.on('grabResult', (result) => {
       lastGrabResult.value = result;
       // Reset after a short delay so we can react to same result if needed, or handle in UI
@@ -133,6 +152,7 @@ export function initChat() {
     socket.off('userLeft');
     socket.off('userUpdated');
     socket.off('newMessage');
+    socket.off('messageUpdated');
     socket.off('grabResult');
     socket.off('error');
     socket.off('fireworks');
@@ -173,6 +193,14 @@ export function useChat() {
     socket.emit('sendFireworks');
   };
 
+  const sendLottery = (prizeImage: string | null, contactInfo: string, maxParticipants: number) => {
+    socket.emit('sendLottery', { prizeImage, contactInfo, maxParticipants });
+  };
+
+  const joinLottery = (lotteryId: string) => {
+    socket.emit('joinLottery', lotteryId);
+  };
+
   // Filter messages older than 30 minutes
   const visibleMessages = computed(() => {
     const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
@@ -189,6 +217,8 @@ export function useChat() {
     sendRedPacket,
     grabRedPacket,
     sendFireworks,
+    sendLottery,
+    joinLottery,
     lastGrabResult,
     lastError,
     fireworksSignal
