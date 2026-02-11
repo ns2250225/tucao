@@ -252,7 +252,7 @@
         <div>
           <label class="block text-sm font-bold text-gray-700 mb-1">选项</label>
           <div class="space-y-2">
-            <div v-for="(option, index) in pollOptions" :key="index" class="flex gap-2">
+            <div v-for="(_option, index) in pollOptions" :key="index" class="flex gap-2">
               <input 
                 v-model="pollOptions[index]" 
                 class="flex-1 border-2 border-gray-200 rounded-lg p-2 focus:border-orange-500 focus:outline-none transition-colors" 

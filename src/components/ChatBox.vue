@@ -122,7 +122,7 @@
                   >
                     <span class="text-sm font-medium truncate flex-1 mr-2">{{ option.text }}</span>
                     <div class="text-xs font-mono shrink-0 flex items-center gap-2">
-                      <span v-if="msg.pollData?.voters?.includes(currentUserId || '') && msg.pollData.voters.includes(currentUserId) /* This check is imperfect as we don't know WHICH option they voted for without more data, but we can mark the whole poll as voted */"></span>
+                      <span v-if="currentUserId && msg.pollData?.voters?.includes(currentUserId)"></span>
                       <span>{{ option.count }}票</span>
                       <span class="opacity-70 text-[10px] w-8 text-right">
                         {{ msg.pollData?.totalVotes ? Math.round(option.count / msg.pollData.totalVotes * 100) : 0 }}%
