@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-secondary flex gap-4 items-end relative">
+  <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-secondary flex gap-4 relative">
     <!-- Emoji Picker Popover -->
     <div v-if="showEmojiPicker" class="absolute bottom-full left-0 mb-2 z-50 shadow-xl rounded-xl overflow-hidden">
       <EmojiPicker :native="true" @select="onSelectEmoji" />
@@ -11,73 +11,83 @@
           v-model="text"
           @keydown.enter.prevent="handleEnter"
           placeholder="在此输入你的槽点... (回车发送)"
-          class="w-full bg-background border-2 border-secondary/30 rounded-lg p-3 pb-10 text-text-color placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24 custom-scrollbar font-sans"
+          class="w-full bg-background border-2 border-secondary/30 rounded-lg p-3 text-text-color placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24 custom-scrollbar font-sans"
         ></textarea>
+      </div>
         
-        <!-- Tools -->
-        <div class="absolute bottom-2 left-2 flex gap-2 items-center">
-          <button 
-            @click="toggleEmojiPicker"
-            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-primary transition-colors"
-            title="添加表情"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
-          
-          <button 
-            @click="triggerImageUpload"
-            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-primary transition-colors"
-            title="添加图片"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </button>
+      <!-- Tools -->
+      <div class="flex gap-2 items-center flex-wrap px-1">
+        <button 
+          @click="toggleEmojiPicker"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-primary transition-colors"
+          title="添加表情"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+        
+        <button 
+          @click="triggerImageUpload"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-primary transition-colors"
+          title="添加图片"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </button>
 
-          <button 
-            @click="showRedPacketModal = true"
-            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-red-500 transition-colors"
-            title="发红包"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
+        <button 
+          @click="showRedPacketModal = true"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-red-500 transition-colors"
+          title="发红包"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
 
-          <button 
-            @click="handleSendFireworks"
-            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="放烟花"
-            :disabled="isFireworksCoolingDown"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a1 1 0 011 1v4a1 1 0 11-2 0V3a1 1 0 011-1zM4.929 4.929a1 1 0 011.414 0l2.828 2.828a1 1 0 11-1.414 1.414L4.93 6.343a1 1 0 010-1.414zM19.071 4.929a1 1 0 010 1.414l-2.828 2.828a1 1 0 11-1.414-1.414l2.828-2.828a1 1 0 011.414 0z" />
-            </svg>
-          </button>
+        <button 
+          @click="handleSendFireworks"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="放烟花"
+          :disabled="isFireworksCoolingDown"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a1 1 0 011 1v4a1 1 0 11-2 0V3a1 1 0 011-1zM4.929 4.929a1 1 0 011.414 0l2.828 2.828a1 1 0 11-1.414 1.414L4.93 6.343a1 1 0 010-1.414zM19.071 4.929a1 1 0 010 1.414l-2.828 2.828a1 1 0 11-1.414-1.414l2.828-2.828a1 1 0 011.414 0z" />
+          </svg>
+        </button>
 
-          <button 
-            @click="showLotteryModal = true"
-            class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-blue-500 transition-colors"
-            title="发布抽奖活动"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-            </svg>
-          </button>
+        <button 
+          @click="showLotteryModal = true"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-blue-500 transition-colors"
+          title="发布抽奖活动"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+          </svg>
+        </button>
 
-          <input 
-            type="file" 
-            ref="fileInput" 
-            accept="image/*" 
-            class="hidden" 
-            @change="handleFileChange"
-          />
-        </div>
+        <button 
+          @click="showPollModal = true"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-orange-500 transition-colors"
+          title="发布投票"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </button>
 
-        <div class="absolute bottom-2 right-2 text-xs text-gray-400 font-mono">
+        <input 
+          type="file" 
+          ref="fileInput" 
+          accept="image/*" 
+          class="hidden" 
+          @change="handleFileChange"
+        />
+
+        <div class="text-xs text-gray-400 font-mono ml-auto">
           {{ text.length }}/500
         </div>
       </div>
@@ -98,7 +108,7 @@
     
     <button 
       @click="send"
-      class="h-24 w-24 bg-cta hover:bg-green-600 text-white rounded-lg font-bold font-serif text-lg shadow-md transition-all active:scale-95 flex flex-col items-center justify-center gap-1 group shrink-0"
+      class="w-24 bg-cta hover:bg-green-600 text-white rounded-lg font-bold font-serif text-lg shadow-md transition-all active:scale-95 flex flex-col items-center justify-center gap-1 group shrink-0"
       :disabled="!text.trim() && !imagePreview"
     >
       <span>吐槽</span>
@@ -213,6 +223,73 @@
       </div>
     </div>
   </div>
+
+  <!-- Poll Modal -->
+  <div v-if="showPollModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border-2 border-orange-200">
+      <div class="bg-orange-500 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+          </svg>
+          发布投票
+        </h3>
+        <button @click="showPollModal = false" class="hover:bg-orange-600 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">投票标题</label>
+          <input 
+            v-model="pollTitle" 
+            class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-orange-500 focus:outline-none transition-colors" 
+            placeholder="例如：中午吃什么？" 
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">选项</label>
+          <div class="space-y-2">
+            <div v-for="(option, index) in pollOptions" :key="index" class="flex gap-2">
+              <input 
+                v-model="pollOptions[index]" 
+                class="flex-1 border-2 border-gray-200 rounded-lg p-2 focus:border-orange-500 focus:outline-none transition-colors" 
+                :placeholder="`选项 ${index + 1}`" 
+              />
+              <button 
+                v-if="pollOptions.length > 2"
+                @click="removePollOption(index)"
+                class="text-red-400 hover:text-red-600 p-2"
+                title="删除选项"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button 
+            @click="addPollOption" 
+            class="mt-2 text-sm text-orange-500 font-bold hover:text-orange-600 flex items-center gap-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
+            添加选项
+          </button>
+        </div>
+        <button 
+          @click="handleSendPoll" 
+          class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!pollTitle.trim() || pollOptions.filter(o => o.trim()).length < 2"
+        >
+          发起投票
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -221,7 +298,7 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks, sendLottery } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery, createPoll } = useChat();
 
 const isFireworksCoolingDown = ref(false);
 
@@ -307,6 +384,39 @@ const handleSendLottery = () => {
   lotteryMaxParticipants.value = null;
   lotteryContactInfo.value = '';
   lotteryImagePreview.value = null;
+};
+
+// Poll State
+const showPollModal = ref(false);
+const pollTitle = ref('');
+const pollOptions = ref(['', '']);
+
+const addPollOption = () => {
+  pollOptions.value.push('');
+};
+
+const removePollOption = (index: number) => {
+  pollOptions.value.splice(index, 1);
+};
+
+const handleSendPoll = () => {
+  if (!pollTitle.value.trim()) {
+    alert('请输入投票标题');
+    return;
+  }
+  
+  const validOptions = pollOptions.value.map(o => o.trim()).filter(o => o);
+  if (validOptions.length < 2) {
+    alert('至少需要两个有效选项');
+    return;
+  }
+  
+  createPoll(pollTitle.value, validOptions);
+  showPollModal.value = false;
+  
+  // Reset fields
+  pollTitle.value = '';
+  pollOptions.value = ['', ''];
 };
 
 const handleSendRedPacket = () => {

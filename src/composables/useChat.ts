@@ -38,6 +38,19 @@ export interface LotteryData {
   contactInfo?: string | null;
 }
 
+export interface PollOption {
+  id: number;
+  text: string;
+  count: number;
+}
+
+export interface PollData {
+  title: string;
+  options: PollOption[];
+  totalVotes: number;
+  voters?: string[]; // Array of user IDs who voted
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -45,10 +58,12 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system' | 'redPacket' | 'lottery';
+  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll';
   redPacketId?: string;
   lotteryId?: string;
   lotteryData?: LotteryData;
+  pollId?: string;
+  pollData?: PollData;
 }
 
 const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
@@ -201,6 +216,14 @@ export function useChat() {
     socket.emit('joinLottery', lotteryId);
   };
 
+  const createPoll = (title: string, options: string[]) => {
+    socket.emit('createPoll', { title, options });
+  };
+
+  const votePoll = (pollId: string, optionId: number) => {
+    socket.emit('vote', { pollId, optionId });
+  };
+
   // Filter messages older than 30 minutes
   const visibleMessages = computed(() => {
     const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
@@ -219,6 +242,8 @@ export function useChat() {
     sendFireworks,
     sendLottery,
     joinLottery,
+    createPoll,
+    votePoll,
     lastGrabResult,
     lastError,
     fireworksSignal

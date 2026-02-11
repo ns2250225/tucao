@@ -23,6 +23,8 @@ let messages = [];
 const redPackets = {};
 // Store lotteries: { id: { ... } }
 const lotteries = {};
+// Store polls: { id: { ... } }
+const polls = {};
 
 // Cleanup routine: remove messages older than 30 minutes
 const MESSAGE_LIFETIME = 30 * 60 * 1000; // 30 minutes in ms
@@ -43,6 +45,13 @@ setInterval(() => {
   for (const id in lotteries) {
     if (now - lotteries[id].timestamp > MESSAGE_LIFETIME) {
       delete lotteries[id];
+    }
+  }
+
+  // Handle polls cleanup
+  for (const id in polls) {
+    if (now - polls[id].timestamp > MESSAGE_LIFETIME) {
+      delete polls[id];
     }
   }
 
@@ -250,6 +259,120 @@ io.on('connection', (socket) => {
 
     messages.push(message);
     io.emit('newMessage', message);
+  });
+
+  // Handle create Poll
+  socket.on('createPoll', (payload) => {
+    console.log(`[Poll] User ${socket.id} creating poll:`, payload);
+    const { title, options } = payload;
+    const user = users[socket.id];
+    
+    if (!user) return;
+    if (!title || !options || !Array.isArray(options) || options.length < 2) {
+      socket.emit('error', '投票数据无效');
+      return;
+    }
+
+    const pollId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    const poll = {
+      id: pollId,
+      creatorId: user.id,
+      creatorName: user.name,
+      title: title,
+      options: options.map((opt, index) => ({
+        id: index,
+        text: opt,
+        count: 0
+      })),
+      voters: {}, // userId -> optionId
+      timestamp: Date.now()
+    };
+    
+    polls[pollId] = poll;
+
+    // Create a message for the poll
+    const chatMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      text: '发布了一个投票',
+      senderId: user.id,
+      senderName: user.name,
+      timestamp: Date.now(),
+      type: 'poll',
+      pollId: pollId,
+      pollData: {
+        title: poll.title,
+        options: poll.options,
+        totalVotes: 0,
+        userVote: null // This will be dynamic per user when rendering, but here it's static structure
+      }
+    };
+
+    messages.push(chatMessage);
+    io.emit('newMessage', chatMessage);
+  });
+
+  // Handle vote
+  socket.on('vote', (payload) => {
+    const { pollId, optionId } = payload;
+    const user = users[socket.id];
+    const poll = polls[pollId];
+
+    if (!poll) {
+      socket.emit('error', '投票不存在或已过期');
+      return;
+    }
+
+    // Check if already voted
+    if (poll.voters[user.id] !== undefined) {
+      socket.emit('error', '你已经投过票了');
+      return;
+    }
+
+    const option = poll.options.find(o => o.id === optionId);
+    if (!option) {
+      socket.emit('error', '选项不存在');
+      return;
+    }
+
+    // Record vote
+    poll.voters[user.id] = optionId;
+    option.count += 1;
+
+    // Calculate total votes
+    const totalVotes = poll.options.reduce((sum, opt) => sum + opt.count, 0);
+
+    // Update message
+    const msgIndex = messages.findIndex(m => m.pollId === pollId);
+    if (msgIndex !== -1) {
+      // We need to broadcast the updated poll data
+      // Note: userVote field needs to be handled by client side logic based on their ID
+      // or we send a generic update and client checks against their own ID using 'voters' map if we exposed it?
+      // Better: Send the full updated options structure and let client handle "my vote" visualization
+      // But we don't want to expose who voted for what necessarily (privacy)?
+      // For this app, let's just expose the counts.
+      
+      messages[msgIndex].pollData = {
+        ...messages[msgIndex].pollData,
+        options: poll.options,
+        totalVotes: totalVotes
+      };
+      
+      // We also need to tell the specific user they voted successfully so their UI updates
+      // Actually, we can just broadcast the message update. 
+      // The client needs to know "I voted for X".
+      // We can send a specific event to the voter, or rely on client side optimistic update + server confirmation?
+      // Simplest: Broadcast 'pollUpdated' with the pollId and new data.
+      // And we need a way for clients to know if *they* voted.
+      // We can include a list of voterIds in the public message? 
+      // Or we can just let the client remember they voted? 
+      // If user refreshes, they lose that state if we don't send it.
+      // Let's add `voters` (just IDs) to the message payload so clients can check `voters.includes(myId)`
+      
+      messages[msgIndex].pollData.voters = Object.keys(poll.voters); // List of user IDs who voted
+      
+      io.emit('messageUpdated', messages[msgIndex]);
+    }
   });
 
   // Handle send Lottery

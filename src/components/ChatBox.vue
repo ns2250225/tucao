@@ -8,7 +8,7 @@
         :class="msg.senderId === currentUserId ? 'items-end' : 'items-start'"
       >
         <div 
-          class="max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:scale-[1.02] duration-200 border-2"
+          class="max-w-[85%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:scale-[1.02] duration-200 border-2"
           :class="[
             msg.senderId === currentUserId 
               ? 'bg-primary text-white border-primary rounded-tr-none' 
@@ -83,7 +83,65 @@
             </div>
           </div>
 
-          <div v-else-if="msg.text" class="text-base break-words font-sans leading-relaxed">
+          <!-- Poll Message -->
+          <div v-else-if="msg.type === 'poll'" class="w-full">
+            <div class="bg-orange-500 text-white p-3 rounded-t-lg min-w-[240px] space-y-3">
+              <div class="flex items-center gap-3 border-b border-white/20 pb-2">
+                <div class="bg-orange-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-orange-500">
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                   </svg>
+                </div>
+                <div>
+                  <div class="font-bold text-sm">投票活动</div>
+                  <div class="text-xs opacity-80">
+                    {{ msg.pollData?.totalVotes || 0 }} 人参与
+                  </div>
+                </div>
+              </div>
+              
+              <div class="font-bold text-lg leading-tight">
+                {{ msg.pollData?.title }}
+              </div>
+
+              <div class="space-y-2">
+                <div v-for="option in msg.pollData?.options" :key="option.id" class="relative">
+                  <!-- Result Bar Background -->
+                  <div class="absolute inset-0 bg-white/10 rounded-lg overflow-hidden">
+                    <div 
+                      class="h-full bg-white/30 transition-all duration-500 ease-out"
+                      :style="{ width: `${msg.pollData?.totalVotes ? (option.count / msg.pollData.totalVotes * 100) : 0}%` }"
+                    ></div>
+                  </div>
+                  
+                  <!-- Option Content -->
+                  <button 
+                    @click="handleVote(msg.pollId!, option.id)"
+                    class="relative w-full text-left py-2 px-3 rounded-lg border border-white/20 hover:bg-white/5 transition-colors flex justify-between items-center group z-10 disabled:cursor-default"
+                    :disabled="hasVoted(msg)"
+                  >
+                    <span class="text-sm font-medium truncate flex-1 mr-2">{{ option.text }}</span>
+                    <div class="text-xs font-mono shrink-0 flex items-center gap-2">
+                      <span v-if="msg.pollData?.voters?.includes(currentUserId || '') && msg.pollData.voters.includes(currentUserId) /* This check is imperfect as we don't know WHICH option they voted for without more data, but we can mark the whole poll as voted */"></span>
+                      <span>{{ option.count }}票</span>
+                      <span class="opacity-70 text-[10px] w-8 text-right">
+                        {{ msg.pollData?.totalVotes ? Math.round(option.count / msg.pollData.totalVotes * 100) : 0 }}%
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              
+              <div v-if="hasVoted(msg)" class="text-center text-xs bg-white/20 rounded py-1">
+                ✅ 您已参与投票
+              </div>
+            </div>
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+              30分钟后截止
+            </div>
+          </div>
+
+          <div v-else-if="msg.text" class="text-base break-all whitespace-pre-wrap font-sans leading-relaxed">
             {{ msg.text }}
           </div>
           <div class="text-[10px] opacity-50 mt-2 text-right font-mono">
@@ -146,7 +204,7 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, joinLottery, lastGrabResult } = useChat();
+const { grabRedPacket, joinLottery, votePoll, lastGrabResult } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
 
 // Result Modal State
@@ -166,6 +224,15 @@ const handleGrabRedPacket = (id: string) => {
 
 const handleJoinLottery = (id: string) => {
   joinLottery(id);
+};
+
+const handleVote = (pollId: string, optionId: number) => {
+  votePoll(pollId, optionId);
+};
+
+const hasVoted = (msg: Message) => {
+  if (!msg.pollData?.voters || !props.currentUserId) return false;
+  return msg.pollData.voters.includes(props.currentUserId);
 };
 
 // Watch for grab results
