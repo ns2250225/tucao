@@ -79,6 +79,16 @@
           </svg>
         </button>
 
+        <button 
+          @click="showToastModal = true"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-yellow-500 transition-colors"
+          title="发布干杯活动"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </button>
+
         <input 
           type="file" 
           ref="fileInput" 
@@ -290,6 +300,50 @@
       </div>
     </div>
   </div>
+  <!-- Toast Activity Modal -->
+  <div v-if="showToastModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border-2 border-yellow-200">
+      <div class="bg-yellow-500 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 5a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1V8a1 1 0 011-1zm5-5a1 1 0 011 1v1h1a1 1 0 010 2h-1v1a1 1 0 01-2 0V6H9a1 1 0 010-2h1V3a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
+          发布干杯活动
+        </h3>
+        <button @click="showToastModal = false" class="hover:bg-yellow-600 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">选择饮料</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div 
+              v-for="drink in availableDrinks" 
+              :key="drink.name"
+              @click="selectedDrink = drink.path"
+              class="relative rounded-lg border-2 cursor-pointer transition-all overflow-hidden h-24 flex items-center justify-center bg-gray-50"
+              :class="selectedDrink === drink.path ? 'border-yellow-500 ring-2 ring-yellow-200' : 'border-gray-200 hover:border-yellow-300'"
+            >
+              <img :src="drink.path" class="h-20 object-contain" :alt="drink.name" />
+              <div class="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs text-center py-1 truncate">
+                {{ drink.name }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <button 
+          @click="handleSendToast" 
+          class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!selectedDrink"
+        >
+          发布活动
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -298,7 +352,7 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks, sendLottery, createPoll } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast } = useChat();
 
 const isFireworksCoolingDown = ref(false);
 
@@ -400,23 +454,39 @@ const removePollOption = (index: number) => {
 };
 
 const handleSendPoll = () => {
-  if (!pollTitle.value.trim()) {
-    alert('请输入投票标题');
+  const options = pollOptions.value.filter(o => o.trim());
+  if (!pollTitle.value.trim() || options.length < 2) {
+    alert('请输入标题和至少两个选项');
     return;
   }
-  
-  const validOptions = pollOptions.value.map(o => o.trim()).filter(o => o);
-  if (validOptions.length < 2) {
-    alert('至少需要两个有效选项');
-    return;
-  }
-  
-  createPoll(pollTitle.value, validOptions);
+
+  createPoll(pollTitle.value, options);
   showPollModal.value = false;
   
-  // Reset fields
+  // Reset
   pollTitle.value = '';
   pollOptions.value = ['', ''];
+};
+
+// Toast Activity State
+const showToastModal = ref(false);
+const selectedDrink = ref<string | null>(null);
+const availableDrinks = [
+  { name: '可乐', path: '/drink/可乐.jpg' },
+  { name: '咖啡', path: '/drink/咖啡.jpg' },
+  { name: '啤酒', path: '/drink/啤酒.jpg' },
+  { name: '牛奶', path: '/drink/牛奶.png' }
+];
+
+const handleSendToast = () => {
+  if (!selectedDrink.value) {
+    alert('请选择一种饮料');
+    return;
+  }
+  
+  sendToast(selectedDrink.value);
+  showToastModal.value = false;
+  selectedDrink.value = null;
 };
 
 const handleSendRedPacket = () => {

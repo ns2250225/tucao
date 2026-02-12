@@ -95,14 +95,32 @@
   </div>
 
   <!-- Fireworks Text Overlay -->
-  <Transition name="fade">
-    <div v-if="showFireworksText" class="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none">
-      <div class="text-6xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-red-500 to-yellow-300 animate-pulse drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] transform scale-100 transition-transform duration-500" style="text-shadow: 0 0 20px rgba(255,215,0,0.5);">
-        新年快乐
+    <Transition name="fade">
+      <div v-if="showFireworksText" class="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none">
+        <div class="text-6xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-red-500 to-yellow-300 animate-pulse drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)] transform scale-100 transition-transform duration-500" style="text-shadow: 0 0 20px rgba(255,215,0,0.5);">
+          新年快乐
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Danmaku Overlay -->
+    <div class="fixed inset-0 z-[160] pointer-events-none overflow-hidden">
+      <div 
+        v-for="item in danmakuList" 
+        :key="item.id"
+        class="absolute whitespace-nowrap font-bold text-2xl shadow-sm"
+        :style="{ 
+          top: `${item.top}%`, 
+          left: '100%', 
+          animation: `danmaku-move ${item.duration}s linear forwards`,
+          textShadow: '1px 1px 2px black',
+          color: item.color
+        }"
+      >
+        {{ item.text }}
       </div>
     </div>
-  </Transition>
-</template>
+  </template>
 
 <script setup lang="ts">
 import { onMounted, watch, ref } from 'vue';
@@ -115,10 +133,57 @@ import confetti from 'canvas-confetti';
 // Initialize socket listeners
 initChat();
 
-const { state, visibleMessages, connect, sendMessage, updateName, lastError, fireworksSignal } = useChat();
+const { state, visibleMessages, connect, sendMessage, updateName, lastError, fireworksSignal, cheersSignal } = useChat();
 
 const showMobileUserList = ref(false);
 const showFireworksText = ref(false);
+
+// Danmaku Logic
+const danmakuList = ref<{ id: number; text: string; top: number; duration: number; color: string }[]>([]);
+const toastTexts = [ 
+   "祝我们合作愉快，事业蒸蒸日上，干杯！", 
+   "敬这段真诚的友谊，愿我们岁月不老，初心不改。", 
+   "这一杯敬未来，愿所有的努力都不被辜负，前路繁花似锦。", 
+   "祝您福如东海，寿比南山，身体康健，干杯！", 
+   "为今天的相聚干杯，愿大家岁岁有今朝，岁岁皆平安。", 
+   "敬我们的梦想，即便星辰大海，也要乘风破浪。", 
+   "祝你新婚快乐，百年好合，永结同心，干杯！", 
+   "愿你往后余生，万事胜意，不负韶华，这一杯我干了。", 
+   "敬奋斗中的我们，愿付出的汗水都能换来成功的喜悦。", 
+   "祝大家财源广进，好运连连，生活甜如蜜，干杯！", 
+   "这一杯，敬那些生命中温暖而美好的瞬间。", 
+   "祝事业如日中天，家庭幸福美满，干杯！", 
+   "敬你一杯酒，愿你烦恼消散，快乐长存。", 
+   "为我们的团队精神干杯，齐心协力，共创辉煌！", 
+   "祝你在新的一年里，大展宏图，步步高升，干杯！", 
+   "敬时光，敬自己，愿每一天都活得热气腾腾。", 
+   "祝大家心想事成，万事顺遂，这一杯我敬大家！", 
+   "敬我们的缘分，世界这么大，感谢能与各位同桌共饮。", 
+   "祝笑容常驻，青春永驻，干杯！", 
+   "最后一杯，祝大家前程似锦，顶峰相见！" 
+];
+
+const danmakuColors = [
+  '#FF5252', '#FF4081', '#E040FB', '#7C4DFF', '#536DFE', 
+  '#448AFF', '#40C4FF', '#18FFFF', '#64FFDA', '#69F0AE', 
+  '#B2FF59', '#EEFF41', '#FFFF00', '#FFD740', '#FFAB40', 
+  '#FF6E40', '#FFFFFF'
+];
+
+watch(cheersSignal, () => {
+  const text = toastTexts[Math.floor(Math.random() * toastTexts.length)] || "干杯！";
+  const id = Date.now() + Math.random();
+  const top = Math.random() * 80 + 10; // 10% to 90% height
+  const duration = Math.random() * 3 + 6; // 6-9 seconds (slower for better readability)
+  const color = danmakuColors[Math.floor(Math.random() * danmakuColors.length)] || '#FFFFFF';
+
+  danmakuList.value.push({ id, text, top, duration, color });
+
+  // Cleanup with extra buffer
+  setTimeout(() => {
+    danmakuList.value = danmakuList.value.filter(item => item.id !== id);
+  }, duration * 1000 + 2000);
+});
 
 watch(fireworksSignal, () => {
   // Show text
@@ -186,5 +251,14 @@ body {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+@keyframes danmaku-move {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100vw - 100%));
+  }
 }
 </style>

@@ -141,6 +141,38 @@
             </div>
           </div>
 
+          <!-- Toast Message -->
+          <div v-else-if="msg.type === 'toast'" class="w-full">
+            <div class="bg-yellow-500 text-white p-3 rounded-t-lg min-w-[240px] space-y-3">
+              <div class="flex items-center gap-3 border-b border-white/20 pb-2">
+                <div class="bg-yellow-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-yellow-500">
+                   <span class="text-xl">🍻</span>
+                </div>
+                <div>
+                  <div class="font-bold text-sm">干杯活动</div>
+                  <div class="text-xs opacity-80">
+                    一起云干杯！
+                  </div>
+                </div>
+              </div>
+              
+              <div class="rounded-lg overflow-hidden border-2 border-white/20 bg-white/10 relative group flex justify-center bg-white">
+                <img :src="msg.toastData?.image" class="h-40 object-contain" />
+              </div>
+
+              <button 
+                @click="handleCheers(msg.toastId!)" 
+                class="w-full bg-white text-yellow-600 font-bold py-2 rounded-lg text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-50"
+                :disabled="isCheersCoolingDown"
+              >
+                <span>🍻</span> {{ isCheersCoolingDown ? '冷却中...' : '干杯' }}
+              </button>
+            </div>
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+              30分钟后结束
+            </div>
+          </div>
+
           <div v-else-if="msg.text" class="text-base break-all whitespace-pre-wrap font-sans leading-relaxed">
             {{ msg.text }}
           </div>
@@ -204,8 +236,20 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, joinLottery, votePoll, lastGrabResult } = useChat();
+const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
+
+// Toast Cheers Cooldown
+const isCheersCoolingDown = ref(false);
+
+const handleCheers = (_toastId: string) => {
+  if (isCheersCoolingDown.value) return;
+  sendCheers();
+  isCheersCoolingDown.value = true;
+  setTimeout(() => {
+    isCheersCoolingDown.value = false;
+  }, 3000);
+};
 
 // Result Modal State
 const showResultModal = ref(false);

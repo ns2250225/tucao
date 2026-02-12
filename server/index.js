@@ -25,6 +25,8 @@ const redPackets = {};
 const lotteries = {};
 // Store polls: { id: { ... } }
 const polls = {};
+// Store toasts: { id: { ... } }
+const toasts = {};
 
 // Cleanup routine: remove messages older than 30 minutes
 const MESSAGE_LIFETIME = 30 * 60 * 1000; // 30 minutes in ms
@@ -52,6 +54,13 @@ setInterval(() => {
   for (const id in polls) {
     if (now - polls[id].timestamp > MESSAGE_LIFETIME) {
       delete polls[id];
+    }
+  }
+
+  // Handle toasts cleanup
+  for (const id in toasts) {
+    if (now - toasts[id].timestamp > MESSAGE_LIFETIME) {
+      delete toasts[id];
     }
   }
 
@@ -303,8 +312,7 @@ io.on('connection', (socket) => {
       pollData: {
         title: poll.title,
         options: poll.options,
-        totalVotes: 0,
-        userVote: null // This will be dynamic per user when rendering, but here it's static structure
+        totalVotes: 0
       }
     };
 
@@ -312,67 +320,84 @@ io.on('connection', (socket) => {
     io.emit('newMessage', chatMessage);
   });
 
-  // Handle vote
-  socket.on('vote', (payload) => {
+  // Handle vote Poll
+  socket.on('votePoll', (payload) => {
     const { pollId, optionId } = payload;
-    const user = users[socket.id];
     const poll = polls[pollId];
+    const user = users[socket.id];
 
-    if (!poll) {
-      socket.emit('error', '投票不存在或已过期');
-      return;
-    }
+    if (!poll || !user) return;
 
     // Check if already voted
     if (poll.voters[user.id] !== undefined) {
-      socket.emit('error', '你已经投过票了');
-      return;
+       socket.emit('error', '你已经投过票了');
+       return;
     }
 
     const option = poll.options.find(o => o.id === optionId);
-    if (!option) {
-      socket.emit('error', '选项不存在');
+    if (!option) return;
+
+    option.count++;
+    poll.voters[user.id] = optionId;
+
+    // Broadcast update
+    io.emit('pollUpdated', {
+      pollId: pollId,
+      pollData: {
+        title: poll.title,
+        options: poll.options,
+        totalVotes: Object.keys(poll.voters).length,
+        voters: Object.keys(poll.voters)
+      }
+    });
+  });
+
+  // Handle create Toast Activity
+  socket.on('sendToast', (payload) => {
+    console.log(`[Toast] User ${socket.id} creating toast:`, payload);
+    const { image } = payload;
+    const user = users[socket.id];
+    
+    if (!user) return;
+    if (!image) {
+      socket.emit('error', '请选择饮料图片');
       return;
     }
 
-    // Record vote
-    poll.voters[user.id] = optionId;
-    option.count += 1;
+    const toastId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    const toast = {
+      id: toastId,
+      creatorId: user.id,
+      creatorName: user.name,
+      image: image,
+      timestamp: Date.now()
+    };
+    
+    toasts[toastId] = toast;
 
-    // Calculate total votes
-    const totalVotes = poll.options.reduce((sum, opt) => sum + opt.count, 0);
+    // Create a message for the toast
+    const chatMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      text: '发起了一个干杯活动',
+      senderId: user.id,
+      senderName: user.name,
+      timestamp: Date.now(),
+      type: 'toast',
+      toastId: toastId,
+      toastData: {
+        image: toast.image
+      }
+    };
 
-    // Update message
-    const msgIndex = messages.findIndex(m => m.pollId === pollId);
-    if (msgIndex !== -1) {
-      // We need to broadcast the updated poll data
-      // Note: userVote field needs to be handled by client side logic based on their ID
-      // or we send a generic update and client checks against their own ID using 'voters' map if we exposed it?
-      // Better: Send the full updated options structure and let client handle "my vote" visualization
-      // But we don't want to expose who voted for what necessarily (privacy)?
-      // For this app, let's just expose the counts.
-      
-      messages[msgIndex].pollData = {
-        ...messages[msgIndex].pollData,
-        options: poll.options,
-        totalVotes: totalVotes
-      };
-      
-      // We also need to tell the specific user they voted successfully so their UI updates
-      // Actually, we can just broadcast the message update. 
-      // The client needs to know "I voted for X".
-      // We can send a specific event to the voter, or rely on client side optimistic update + server confirmation?
-      // Simplest: Broadcast 'pollUpdated' with the pollId and new data.
-      // And we need a way for clients to know if *they* voted.
-      // We can include a list of voterIds in the public message? 
-      // Or we can just let the client remember they voted? 
-      // If user refreshes, they lose that state if we don't send it.
-      // Let's add `voters` (just IDs) to the message payload so clients can check `voters.includes(myId)`
-      
-      messages[msgIndex].pollData.voters = Object.keys(poll.voters); // List of user IDs who voted
-      
-      io.emit('messageUpdated', messages[msgIndex]);
-    }
+    messages.push(chatMessage);
+    io.emit('newMessage', chatMessage);
+  });
+
+  // Handle cheers (danmaku)
+  socket.on('sendCheers', () => {
+    // Broadcast cheers (danmaku) to all clients
+    io.emit('cheers');
   });
 
   // Handle send Lottery

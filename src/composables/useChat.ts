@@ -51,6 +51,10 @@ export interface PollData {
   voters?: string[]; // Array of user IDs who voted
 }
 
+export interface ToastData {
+  image: string;
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -58,12 +62,14 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll';
+  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast';
   redPacketId?: string;
   lotteryId?: string;
   lotteryData?: LotteryData;
   pollId?: string;
   pollData?: PollData;
+  toastId?: string;
+  toastData?: ToastData;
 }
 
 const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
@@ -83,6 +89,7 @@ const state = reactive({
 const lastGrabResult = ref<{ success: boolean; amount?: number; message?: string; detail?: RedPacketDetail } | null>(null);
 const lastError = ref<string | null>(null);
 const fireworksSignal = ref(0);
+const cheersSignal = ref(0);
 
 // Reactive timestamp to trigger periodic updates for message expiration
 const now = ref(Date.now());
@@ -156,6 +163,17 @@ export function initChat() {
     socket.on('fireworks', () => {
       fireworksSignal.value = Date.now();
     });
+
+    socket.on('cheers', () => {
+      cheersSignal.value = Date.now();
+    });
+
+    socket.on('pollUpdated', (data: { pollId: string, pollData: PollData }) => {
+      const msg = state.messages.find(m => m.pollId === data.pollId);
+      if (msg) {
+        msg.pollData = data.pollData;
+      }
+    });
   });
 
   onUnmounted(() => {
@@ -171,6 +189,8 @@ export function initChat() {
     socket.off('grabResult');
     socket.off('error');
     socket.off('fireworks');
+    socket.off('cheers');
+    socket.off('pollUpdated');
   });
 }
 
@@ -221,7 +241,15 @@ export function useChat() {
   };
 
   const votePoll = (pollId: string, optionId: number) => {
-    socket.emit('vote', { pollId, optionId });
+    socket.emit('votePoll', { pollId, optionId });
+  };
+
+  const sendToast = (image: string) => {
+    socket.emit('sendToast', { image });
+  };
+
+  const sendCheers = () => {
+    socket.emit('sendCheers');
   };
 
   // Filter messages older than 30 minutes
@@ -244,8 +272,11 @@ export function useChat() {
     joinLottery,
     createPoll,
     votePoll,
+    sendToast,
+    sendCheers,
     lastGrabResult,
     lastError,
-    fireworksSignal
+    fireworksSignal,
+    cheersSignal
   };
 }
