@@ -200,7 +200,7 @@
         </svg>
       </button>
       
-      <div class="pt-10 pb-16 px-6">
+      <div class="pt-10 px-6" :class="resultGrabbedList.length > 0 ? 'pb-6' : 'pb-16'">
         <div class="w-20 h-20 bg-yellow-100 rounded-full mx-auto flex items-center justify-center mb-4 shadow-lg border-4 border-yellow-300">
            <span class="text-4xl">🧧</span>
         </div>
@@ -218,6 +218,29 @@
         <div v-if="resultAmount" class="text-red-200 text-xs mt-4">
           已存入余额，可用于发红包
         </div>
+
+        <div v-if="resultGrabbedList.length > 0" class="mt-8 bg-black/20 rounded-xl overflow-hidden text-left border border-white/10">
+          <div class="p-3 text-xs text-white/60 border-b border-white/10 flex justify-between items-center bg-black/10">
+             <span>领取详情</span>
+             <span>{{ resultGrabbedList.length }} 人已领</span>
+          </div>
+          <div class="max-h-48 overflow-y-auto custom-scrollbar">
+            <div v-for="(record, index) in resultGrabbedList" :key="index" class="flex items-center justify-between p-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center text-xs text-red-500 font-bold shadow-sm">
+                  {{ record.userName.charAt(0) }}
+                </div>
+                <div class="text-white text-sm text-left">
+                  <div class="font-medium truncate max-w-[80px]">{{ record.userName }}</div>
+                  <div class="text-[10px] text-white/50">{{ formatTime(record.timestamp) }}</div>
+                </div>
+              </div>
+              <div class="text-yellow-300 font-bold text-sm">
+                {{ record.amount.toFixed(2) }} <span class="text-[10px] font-normal text-yellow-100/70">元</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
       <div class="bg-[#d63031] p-4 text-center cursor-pointer hover:bg-[#c0392b] transition-colors text-white/80 text-sm" @click="showResultModal = false">
@@ -229,7 +252,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
-import { type Message, useChat } from '../composables/useChat';
+import { type Message, useChat, type RedPacketGrabbedRecord } from '../composables/useChat';
 
 const props = defineProps<{
   messages: Message[];
@@ -257,6 +280,7 @@ const resultAmount = ref<number | null>(null);
 const resultMessage = ref('');
 const resultSender = ref('');
 const resultStatus = ref('');
+const resultGrabbedList = ref<RedPacketGrabbedRecord[]>([]);
 
 const formatTime = (timestamp: number) => {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -280,29 +304,30 @@ const hasVoted = (msg: Message) => {
 };
 
 // Watch for grab results
-watch(lastGrabResult, (result) => {
-  if (result) {
-    showResultModal.value = true;
-    if (result.success) {
-      resultAmount.value = result.amount!;
-      resultMessage.value = result.detail?.message || '恭喜发财';
-      resultSender.value = result.detail?.senderName || '土豪';
-      resultStatus.value = '';
-    } else {
-      resultAmount.value = null;
-      // If user already grabbed, show how much they grabbed
-      if (result.amount) {
-        resultAmount.value = result.amount;
-        resultMessage.value = '你已经领过啦';
-        resultStatus.value = '';
-      } else {
-        resultStatus.value = result.message || '手慢了，红包派完了';
-        resultMessage.value = result.detail?.message || '下次好运';
+    watch(lastGrabResult, (result) => {
+      if (result) {
+        showResultModal.value = true;
+        resultGrabbedList.value = result.detail?.grabbedList || [];
+        resultSender.value = result.detail?.senderName || '土豪';
+        
+        if (result.success) {
+          resultAmount.value = result.amount!;
+          resultMessage.value = result.detail?.message || '恭喜发财';
+          resultStatus.value = '';
+        } else {
+          resultAmount.value = null;
+          // If user already grabbed, show how much they grabbed
+          if (result.amount) {
+            resultAmount.value = result.amount;
+            resultMessage.value = '你已经领过啦';
+            resultStatus.value = '';
+          } else {
+            resultStatus.value = result.message || '手慢了，红包派完了';
+            resultMessage.value = result.detail?.message || '下次好运';
+          }
+        }
       }
-      resultSender.value = result.detail?.senderName || '土豪';
-    }
-  }
-});
+    });
 
 // Auto scroll to bottom
 watch(() => props.messages.length, () => {
