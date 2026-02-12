@@ -55,6 +55,30 @@ export interface ToastData {
   image: string;
 }
 
+export interface DiceGameResult {
+  dice: [number, number, number];
+  total: number;
+  result: 'big' | 'small' | 'leopard';
+  winners: {
+    userId: string;
+    userName: string;
+    betType: 'big' | 'small' | 'leopard';
+    betAmount: number;
+    winAmount: number;
+  }[];
+}
+
+export interface DiceGameData {
+  participants: {
+    userId: string;
+    userName: string;
+    betType: 'big' | 'small' | 'leopard';
+    betAmount: number;
+  }[];
+  status: 'active' | 'finished';
+  result?: DiceGameResult;
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -62,7 +86,7 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast';
+  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast' | 'diceGame';
   redPacketId?: string;
   lotteryId?: string;
   lotteryData?: LotteryData;
@@ -70,6 +94,8 @@ export interface Message {
   pollData?: PollData;
   toastId?: string;
   toastData?: ToastData;
+  diceGameId?: string;
+  diceGameData?: DiceGameData;
   quote?: {
     id: string;
     text: string;
@@ -180,6 +206,13 @@ export function initChat() {
         msg.pollData = data.pollData;
       }
     });
+
+    socket.on('diceGameUpdated', (data: { diceGameId: string, diceGameData: DiceGameData }) => {
+      const msg = state.messages.find(m => m.diceGameId === data.diceGameId);
+      if (msg) {
+        msg.diceGameData = data.diceGameData;
+      }
+    });
   });
 
   onUnmounted(() => {
@@ -197,6 +230,7 @@ export function initChat() {
     socket.off('fireworks');
     socket.off('cheers');
     socket.off('pollUpdated');
+    socket.off('diceGameUpdated');
   });
 }
 
@@ -267,6 +301,14 @@ export function useChat() {
     socket.emit('sendCheers');
   };
 
+  const createDiceGame = () => {
+    socket.emit('createDiceGame');
+  };
+
+  const joinDiceGame = (diceGameId: string, betType: 'big' | 'small' | 'leopard', amount: number) => {
+    socket.emit('joinDiceGame', { diceGameId, betType, amount });
+  };
+
   // Filter messages older than 30 minutes
   const visibleMessages = computed(() => {
     const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
@@ -289,6 +331,8 @@ export function useChat() {
     votePoll,
     sendToast,
     sendCheers,
+    createDiceGame,
+    joinDiceGame,
     lastGrabResult,
     lastError,
     fireworksSignal,

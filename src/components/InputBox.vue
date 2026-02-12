@@ -98,6 +98,17 @@
           title="发布干杯活动"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z" />
+          </svg>
+        </button>
+
+        <button 
+          @click="handleCreateDiceGame"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="发布赌大小活动"
+          :disabled="isDiceCoolingDown"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
         </button>
@@ -365,9 +376,21 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, replyingTo, setReplyTo } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, createDiceGame, replyingTo, setReplyTo } = useChat();
 
 const isFireworksCoolingDown = ref(false);
+const isDiceCoolingDown = ref(false);
+
+const handleCreateDiceGame = () => {
+  if (isDiceCoolingDown.value) return;
+  
+  createDiceGame();
+  isDiceCoolingDown.value = true;
+  
+  setTimeout(() => {
+    isDiceCoolingDown.value = false;
+  }, 10000);
+};
 
 const handleSendFireworks = () => {
   if (isFireworksCoolingDown.value) return;

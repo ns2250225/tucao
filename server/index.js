@@ -28,6 +28,8 @@ const lotteries = {};
 const polls = {};
 // Store toasts: { id: { ... } }
 const toasts = {};
+// Store dice games: { id: { ... } }
+const diceGames = {};
 
 // Cleanup routine: remove messages older than 30 minutes
 const MESSAGE_LIFETIME = 30 * 60 * 1000; // 30 minutes in ms
@@ -65,6 +67,13 @@ setInterval(() => {
     }
   }
 
+  // Handle dice games cleanup
+  for (const id in diceGames) {
+    if (now - diceGames[id].timestamp > MESSAGE_LIFETIME) {
+      delete diceGames[id];
+    }
+  }
+
   if (messages.length !== initialCount) {
     // Optional: emit an event if messages were removed, 
     // but clients can also handle expiration locally or just receive the updated list on reconnect.
@@ -97,6 +106,9 @@ io.on('connection', (socket) => {
   // Handle name change
   socket.on('updateName', (newName) => {
     if (users[socket.id]) {
+      if (!newName || newName.length > 20) {
+         return;
+      }
       const oldName = users[socket.id].name;
       users[socket.id].name = newName;
       io.emit('userUpdated', users[socket.id]);
@@ -235,6 +247,191 @@ io.on('connection', (socket) => {
       socket.emit('redPacketDetail', redPacket);
     }
   });
+
+  // Handle create Dice Game
+  socket.on('createDiceGame', () => {
+    const user = users[socket.id];
+    if (!user) return;
+
+    const diceGameId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    const diceGame = {
+      id: diceGameId,
+      creatorId: user.id,
+      creatorName: user.name,
+      participants: [], // Array of { userId, userName, betType, betAmount }
+      status: 'active',
+      timestamp: Date.now()
+    };
+    
+    diceGames[diceGameId] = diceGame;
+
+    // Create a message for the dice game
+    const chatMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      text: '发布了一个赌大小活动',
+      senderId: user.id,
+      senderName: user.name,
+      timestamp: Date.now(),
+      type: 'diceGame',
+      diceGameId: diceGameId,
+      diceGameData: {
+        participants: [],
+        status: 'active'
+      }
+    };
+
+    messages.push(chatMessage);
+    io.emit('newMessage', chatMessage);
+  });
+
+  // Handle join Dice Game
+  socket.on('joinDiceGame', (payload) => {
+    const { diceGameId, betType, amount } = payload;
+    const diceGame = diceGames[diceGameId];
+    const user = users[socket.id];
+
+    if (!diceGame || !user) {
+      socket.emit('error', '活动不存在或已过期');
+      return;
+    }
+
+    if (diceGame.status !== 'active') {
+      socket.emit('error', '活动已结束');
+      return;
+    }
+
+    // Check if already joined
+    if (diceGame.participants.some(p => p.userId === user.id)) {
+      socket.emit('error', '你已经参与过该活动了');
+      return;
+    }
+
+    // Check balance
+    if (user.money < amount) {
+      socket.emit('error', '余额不足');
+      return;
+    }
+    
+    if (amount <= 0) {
+      socket.emit('error', '赌注必须大于0');
+      return;
+    }
+
+    // Deduct money
+    user.money -= amount;
+    io.emit('userUpdated', user);
+
+    // Add participant
+    diceGame.participants.push({
+      userId: user.id,
+      userName: user.name,
+      betType: betType,
+      betAmount: amount
+    });
+
+    // Notify update
+    io.emit('diceGameUpdated', {
+      diceGameId: diceGameId,
+      diceGameData: {
+        participants: diceGame.participants,
+        status: diceGame.status
+      }
+    });
+
+    // Check if full (8 participants)
+    if (diceGame.participants.length >= 8) {
+      settleDiceGame(diceGameId);
+    }
+  });
+
+  function settleDiceGame(diceGameId) {
+    const diceGame = diceGames[diceGameId];
+    if (!diceGame || diceGame.status !== 'active') return;
+
+    diceGame.status = 'finished';
+
+    // Roll 3 dice
+    const dice = [
+      Math.floor(Math.random() * 6) + 1,
+      Math.floor(Math.random() * 6) + 1,
+      Math.floor(Math.random() * 6) + 1
+    ];
+    
+    const total = dice.reduce((a, b) => a + b, 0);
+    let result = ''; // 'big', 'small', 'leopard'
+
+    // Determine result
+    const isLeopard = dice[0] === dice[1] && dice[1] === dice[2];
+    
+    if (isLeopard) {
+      result = 'leopard';
+    } else if (total >= 4 && total <= 10) {
+      result = 'small';
+    } else if (total >= 11 && total <= 17) {
+      result = 'big';
+    }
+
+    const winners = [];
+
+    // Distribute winnings
+    diceGame.participants.forEach(p => {
+      let winAmount = 0;
+      let isWinner = false;
+
+      if (p.betType === result) {
+        isWinner = true;
+        if (result === 'leopard') {
+          // Odds 1:24
+          winAmount = p.betAmount + p.betAmount * 24;
+        } else {
+          // Odds 1:1
+          winAmount = p.betAmount + p.betAmount * 1;
+        }
+      }
+
+      if (isWinner) {
+        const winnerUser = users[p.userId]; // Find by ID, might be disconnected but we update state
+        // If user is connected/in memory
+        if (winnerUser) {
+          winnerUser.money += winAmount;
+          io.emit('userUpdated', winnerUser);
+        } else {
+           // If user disconnected, we might need persistent storage. 
+           // For now, we update the user object if it exists in 'users' map.
+           // Since 'users' map is only connected users, if they left they lose money.
+           // This is a limitation of in-memory store.
+        }
+        
+        winners.push({
+          userId: p.userId,
+          userName: p.userName,
+          betType: p.betType,
+          betAmount: p.betAmount,
+          winAmount: winAmount
+        });
+      }
+    });
+
+    const resultData = {
+      dice,
+      total,
+      result,
+      winners
+    };
+
+    diceGame.result = resultData;
+
+    // Notify update
+    io.emit('diceGameUpdated', {
+      diceGameId: diceGameId,
+      diceGameData: {
+        participants: diceGame.participants,
+        status: 'finished',
+        result: resultData
+      }
+    });
+  }
 
   // Handle fireworks
   socket.on('sendFireworks', () => {

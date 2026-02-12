@@ -27,7 +27,11 @@
           </div>
 
           <div v-if="msg.image" class="mb-2 rounded-lg overflow-hidden border border-white/20">
-             <img :src="msg.image" class="max-w-full max-h-64 object-cover block" />
+             <img 
+               :src="msg.image" 
+               class="max-w-full max-h-64 object-cover block cursor-zoom-in" 
+               @click.stop="previewImage = msg.image"
+             />
           </div>
           
           <!-- Red Packet Message -->
@@ -65,8 +69,12 @@
               </div>
               
               <div v-if="msg.lotteryData?.prizeImage" class="rounded-lg overflow-hidden border-2 border-white/20 bg-white/10 relative group">
-                <img :src="msg.lotteryData.prizeImage" class="w-full h-32 object-cover" />
-                <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                <img 
+                  :src="msg.lotteryData.prizeImage" 
+                  class="w-full h-32 object-cover cursor-zoom-in" 
+                  @click.stop="previewImage = msg.lotteryData.prizeImage"
+                />
+                <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
               </div>
 
               <div v-if="msg.lotteryData?.status === 'active'">
@@ -165,7 +173,11 @@
               </div>
               
               <div class="rounded-lg overflow-hidden border-2 border-white/20 bg-white/10 relative group flex justify-center bg-white">
-                <img :src="msg.toastData?.image" class="h-40 object-contain" />
+                <img 
+                  :src="msg.toastData?.image" 
+                  class="h-40 object-contain cursor-zoom-in" 
+                  @click.stop="previewImage = msg.toastData?.image || null"
+                />
               </div>
 
               <button 
@@ -178,6 +190,85 @@
             </div>
             <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
               30分钟后结束
+            </div>
+          </div>
+
+          <!-- Dice Game Message -->
+          <div v-else-if="msg.type === 'diceGame'" class="w-full">
+            <div class="bg-green-600 text-white p-3 rounded-t-lg min-w-[240px] space-y-3">
+              <div class="flex items-center gap-3 border-b border-white/20 pb-2">
+                <div class="bg-green-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-green-600">
+                   <span class="text-xl">🎲</span>
+                </div>
+                <div>
+                  <div class="font-bold text-sm">赌大小活动</div>
+                  <div class="text-xs opacity-80">
+                    {{ msg.diceGameData?.participants.length || 0 }} / 8 人参与
+                  </div>
+                </div>
+              </div>
+
+              <!-- Active State -->
+              <div v-if="msg.diceGameData?.status === 'active'" class="space-y-3">
+                <div class="grid grid-cols-3 gap-2">
+                   <button 
+                     @click="openDiceBetModal(msg.diceGameId!, 'big')"
+                     class="bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                     :disabled="hasJoinedDiceGame(msg)"
+                   >
+                     <span class="text-lg">大</span>
+                     <span class="text-[10px] opacity-80">1:1</span>
+                   </button>
+                   <button 
+                     @click="openDiceBetModal(msg.diceGameId!, 'leopard')"
+                     class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                     :disabled="hasJoinedDiceGame(msg)"
+                   >
+                     <span class="text-lg">围骰</span>
+                     <span class="text-[10px] opacity-80">1:24</span>
+                   </button>
+                   <button 
+                     @click="openDiceBetModal(msg.diceGameId!, 'small')"
+                     class="bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                     :disabled="hasJoinedDiceGame(msg)"
+                   >
+                     <span class="text-lg">小</span>
+                     <span class="text-[10px] opacity-80">1:1</span>
+                   </button>
+                </div>
+                <div v-if="hasJoinedDiceGame(msg)" class="text-center text-xs bg-black/20 rounded py-1">
+                  ✅ 您已下注: {{ getMyBet(msg)?.betAmount }}元 ({{ getBetLabel(getMyBet(msg)?.betType) }})
+                </div>
+              </div>
+
+              <!-- Finished State -->
+              <div v-else class="space-y-3">
+                <div class="flex justify-center gap-4 py-2">
+                  <div v-for="(dice, idx) in msg.diceGameData?.result?.dice" :key="idx" 
+                    class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg text-black font-bold text-xl border-2 border-gray-200"
+                  >
+                    {{ dice }}
+                  </div>
+                </div>
+                <div class="text-center font-bold text-xl text-yellow-300">
+                  {{ msg.diceGameData?.result?.total }}点 - {{ getBetLabel(msg.diceGameData?.result?.result) }}
+                </div>
+                
+                <!-- Winner List -->
+                <div class="bg-black/20 rounded-lg p-2 max-h-32 overflow-y-auto custom-scrollbar">
+                   <div v-if="!msg.diceGameData?.result?.winners.length" class="text-center text-xs opacity-60 py-2">
+                     无人中奖
+                   </div>
+                   <div v-else v-for="winner in msg.diceGameData?.result?.winners" :key="winner.userId" class="flex justify-between items-center text-xs py-1 border-b border-white/10 last:border-0">
+                     <span class="text-white/90">{{ winner.userName }}</span>
+                     <span class="text-yellow-300 font-bold">+{{ winner.winAmount }}</span>
+                   </div>
+                </div>
+              </div>
+
+            </div>
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+              满8人自动开奖 · 30分钟有效
             </div>
           </div>
 
@@ -273,7 +364,78 @@
       引用消息
     </div>
   </div>
+
+  <!-- Image Preview Modal -->
+  <div v-if="previewImage" class="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out" @click="previewImage = null">
+    <div class="relative max-w-full max-h-full">
+      <img :src="previewImage" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" @click.stop />
+      <button @click="previewImage = null" class="absolute -top-12 right-0 text-white/70 hover:text-white p-2 bg-white/10 rounded-full transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Dice Bet Modal -->
+  <div v-if="showDiceBetModal" class="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-bounce-in">
+      <div class="bg-green-600 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <span class="text-2xl">🎲</span>
+          参与下注
+        </h3>
+        <button @click="closeDiceBetModal" class="hover:bg-white/20 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="p-6 space-y-4">
+        <div class="text-center">
+          <div class="text-gray-500 text-sm mb-1">您选择下注</div>
+          <div class="text-2xl font-bold" :class="{
+            'text-red-500': selectedBetType === 'big',
+            'text-blue-500': selectedBetType === 'small',
+            'text-yellow-500': selectedBetType === 'leopard'
+          }">
+            {{ getBetLabel(selectedBetType) }}
+          </div>
+          <div class="text-xs text-gray-400 mt-1">
+            赔率: {{ selectedBetType === 'leopard' ? '1:24' : '1:1' }}
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">下注金额</label>
+          <div class="relative">
+            <input 
+              v-model.number="betAmount" 
+              type="number" 
+              min="1" 
+              step="1" 
+              class="w-full border-2 border-gray-200 rounded-lg p-3 pr-10 text-lg font-bold text-center focus:border-green-500 focus:outline-none transition-colors"
+              placeholder="0" 
+              autofocus
+              @keyup.enter="confirmBet"
+            />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">元</span>
+          </div>
+        </div>
+
+        <button 
+          @click="confirmBet" 
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!betAmount || betAmount <= 0"
+        >
+          确认下注
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
@@ -284,8 +446,54 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo } = useChat();
+const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
+const previewImage = ref<string | null>(null);
+
+// Dice Game Logic
+const showDiceBetModal = ref(false);
+const selectedDiceGameId = ref<string | null>(null);
+const selectedBetType = ref<'big' | 'small' | 'leopard'>('big');
+const betAmount = ref<number | null>(null);
+
+const openDiceBetModal = (gameId: string, type: 'big' | 'small' | 'leopard') => {
+  selectedDiceGameId.value = gameId;
+  selectedBetType.value = type;
+  betAmount.value = null;
+  showDiceBetModal.value = true;
+};
+
+const closeDiceBetModal = () => {
+  showDiceBetModal.value = false;
+  selectedDiceGameId.value = null;
+  betAmount.value = null;
+};
+
+const confirmBet = () => {
+  if (selectedDiceGameId.value && betAmount.value && betAmount.value > 0) {
+    joinDiceGame(selectedDiceGameId.value, selectedBetType.value, betAmount.value);
+    closeDiceBetModal();
+  }
+};
+
+const hasJoinedDiceGame = (msg: Message) => {
+  if (!msg.diceGameData || !props.currentUserId) return false;
+  return msg.diceGameData.participants.some(p => p.userId === props.currentUserId);
+};
+
+const getMyBet = (msg: Message) => {
+  if (!msg.diceGameData || !props.currentUserId) return null;
+  return msg.diceGameData.participants.find(p => p.userId === props.currentUserId);
+};
+
+const getBetLabel = (type?: string) => {
+  switch (type) {
+    case 'big': return '大';
+    case 'small': return '小';
+    case 'leopard': return '围骰';
+    default: return type;
+  }
+};
 
 // Context Menu State
 const contextMenu = ref({

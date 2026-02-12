@@ -10,16 +10,22 @@
     <div class="p-4 bg-background border-b-2 border-secondary/20">
       <label class="text-xs font-bold text-primary uppercase tracking-wider mb-1 block">我的昵称</label>
       <div class="flex gap-2">
-        <input 
-          v-model="localName" 
-          @keyup.enter="saveName"
-          class="flex-1 bg-white border-2 border-secondary/50 rounded-lg px-3 py-2 text-text-color focus:outline-none focus:border-primary transition-colors font-bold"
-          placeholder="输入昵称..."
-        />
+        <div class="relative flex-1">
+          <input 
+            v-model="localName" 
+            @keyup.enter="saveName"
+            maxlength="20"
+            class="w-full bg-white border-2 border-secondary/50 rounded-lg px-3 py-2 text-text-color focus:outline-none focus:border-primary transition-colors font-bold pr-12"
+            placeholder="输入昵称..."
+          />
+          <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-mono pointer-events-none bg-white/80 px-1 rounded">
+            {{ localName.length }}/20
+          </span>
+        </div>
         <button 
           @click="saveName"
-          class="bg-cta hover:bg-green-600 text-white p-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95"
-          :disabled="!localName.trim() || localName === currentUserName"
+          class="bg-cta hover:bg-green-600 text-white p-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95 shrink-0"
+          :disabled="!localName.trim() || localName === currentUserName || localName.length > 20"
         >
           保存
         </button>
@@ -74,7 +80,7 @@ watch(() => props.currentUserName, (newVal) => {
 }, { immediate: true });
 
 const saveName = () => {
-  if (localName.value.trim() && localName.value !== props.currentUserName) {
+  if (localName.value.trim() && localName.value !== props.currentUserName && localName.value.length <= 20) {
     emit('updateName', localName.value.trim());
   }
 };
