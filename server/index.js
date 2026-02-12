@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import { fakerZH_CN as faker } from '@faker-js/faker';
 
 const app = express();
 app.use(cors());
@@ -79,7 +80,7 @@ io.on('connection', (socket) => {
   // Default user setup
   users[socket.id] = {
     id: socket.id,
-    name: `用户 ${socket.id.substr(0, 4)}`,
+    name: faker.person.fullName(),
     joinedAt: Date.now(),
     money: 1000 // Initial money
   };
