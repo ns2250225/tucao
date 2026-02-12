@@ -41,14 +41,15 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex overflow-hidden p-4 gap-4 max-w-7xl mx-auto w-full">
+    <main class="flex-1 flex overflow-hidden p-2 md:p-4 gap-4 max-w-7xl mx-auto w-full relative">
       <!-- Left: Chat Area -->
-      <div class="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
+      <div class="flex-1 flex flex-col gap-2 md:gap-4 overflow-hidden min-w-0 h-full">
         <ChatBox 
           :messages="visibleMessages" 
           :currentUserId="state.currentUser?.id" 
+          class="flex-1 min-h-0 overflow-hidden"
         />
-        <InputBox @send="sendMessage" />
+        <InputBox @send="sendMessage" class="shrink-0" />
       </div>
 
       <!-- Right: User List (Hidden on mobile, visible on lg) -->

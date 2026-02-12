@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-secondary flex gap-4 relative">
+  <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-secondary flex flex-col md:flex-row gap-4 relative">
     <!-- Emoji Picker Popover -->
     <div v-if="showEmojiPicker" class="absolute bottom-full left-0 mb-2 z-50 shadow-xl rounded-xl overflow-hidden">
       <EmojiPicker :native="true" @select="onSelectEmoji" />
@@ -24,13 +24,14 @@
           v-model="text"
           @keydown.enter.prevent="handleEnter"
           placeholder="在此输入你的槽点... (回车发送)"
-          class="w-full bg-background border-2 border-secondary/30 rounded-lg p-3 text-text-color placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24 custom-scrollbar font-sans"
+          class="w-full bg-background border-2 border-secondary/30 rounded-lg p-3 text-text-color placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none h-16 md:h-24 custom-scrollbar font-sans"
         ></textarea>
       </div>
         
       <!-- Tools -->
       <div class="flex gap-2 items-center flex-wrap px-1">
         <button 
+          type="button"
           @click="toggleEmojiPicker"
           class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-primary transition-colors"
           title="添加表情"
@@ -127,7 +128,7 @@
       </div>
 
       <!-- Image Preview -->
-      <div v-if="imagePreview" class="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-dashed border-secondary/50 group">
+      <div v-if="imagePreview" class="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-dashed border-secondary/50 group shrink-0">
         <img :src="imagePreview" class="w-full h-full object-cover" />
         <button 
           @click="clearImage" 
@@ -142,7 +143,7 @@
     
     <button 
       @click="send"
-      class="w-24 bg-cta hover:bg-green-600 text-white rounded-lg font-bold font-serif text-lg shadow-md transition-all active:scale-95 flex flex-col items-center justify-center gap-1 group shrink-0"
+      class="w-full md:w-24 bg-cta hover:bg-green-600 text-white rounded-lg font-bold font-serif text-lg shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 md:flex-col md:gap-1 group shrink-0 py-3 md:py-0"
       :disabled="!text.trim() && !imagePreview"
     >
       <span>吐槽</span>

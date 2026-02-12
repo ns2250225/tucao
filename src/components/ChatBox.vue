@@ -1,6 +1,6 @@
 <template>
-  <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-white/50 backdrop-blur-sm rounded-xl shadow-inner custom-scrollbar" ref="chatContainer">
-    <TransitionGroup name="list" tag="div" class="space-y-4">
+  <div class="flex-1 overflow-y-auto p-2 md:p-6 space-y-4 bg-white/50 backdrop-blur-sm rounded-xl shadow-inner custom-scrollbar" ref="chatContainer">
+    <TransitionGroup name="list" tag="div" class="space-y-4 pb-2">
       <div 
         v-for="msg in messages" 
         :key="msg.id"
@@ -36,7 +36,7 @@
           
           <!-- Red Packet Message -->
           <div v-if="msg.type === 'redPacket'" class="cursor-pointer" @click="handleGrabRedPacket(msg.redPacketId!)">
-            <div class="bg-red-500 text-white p-3 rounded-lg flex items-center gap-3 min-w-[200px]">
+            <div class="bg-red-500 text-white p-3 rounded-lg flex items-center gap-3 min-w-[200px] md:min-w-[240px]">
               <div class="bg-yellow-100 p-2 rounded-full shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clip-rule="evenodd" />
@@ -55,7 +55,7 @@
 
           <!-- Lottery Message -->
           <div v-else-if="msg.type === 'lottery'" class="w-full">
-            <div class="bg-blue-500 text-white p-3 rounded-t-lg min-w-[200px] space-y-3">
+            <div class="bg-blue-500 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
                 <div class="bg-blue-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center">
                    <span class="text-xl">🎁</span>
@@ -101,7 +101,7 @@
 
           <!-- Poll Message -->
           <div v-else-if="msg.type === 'poll'" class="w-full">
-            <div class="bg-orange-500 text-white p-3 rounded-t-lg min-w-[240px] space-y-3">
+            <div class="bg-orange-500 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
                 <div class="bg-orange-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-orange-500">
                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,7 +159,7 @@
 
           <!-- Toast Message -->
           <div v-else-if="msg.type === 'toast'" class="w-full">
-            <div class="bg-yellow-500 text-white p-3 rounded-t-lg min-w-[240px] space-y-3">
+            <div class="bg-yellow-500 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
                 <div class="bg-yellow-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-yellow-500">
                    <span class="text-xl">🍻</span>
@@ -195,7 +195,7 @@
 
           <!-- Dice Game Message -->
           <div v-else-if="msg.type === 'diceGame'" class="w-full">
-            <div class="bg-green-600 text-white p-3 rounded-t-lg min-w-[240px] space-y-3">
+            <div class="bg-green-600 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
                 <div class="bg-green-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-green-600">
                    <span class="text-xl">🎲</span>
@@ -245,7 +245,7 @@
               <div v-else class="space-y-3">
                 <div class="flex justify-center gap-4 py-2">
                   <div v-for="(dice, idx) in msg.diceGameData?.result?.dice" :key="idx" 
-                    class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg text-black font-bold text-xl border-2 border-gray-200"
+                    class="w-8 h-8 md:w-10 md:h-10 bg-white rounded-lg flex items-center justify-center shadow-lg text-black font-bold text-lg md:text-xl border-2 border-gray-200"
                   >
                     {{ dice }}
                   </div>
@@ -260,8 +260,8 @@
                      无人中奖
                    </div>
                    <div v-else v-for="winner in msg.diceGameData?.result?.winners" :key="winner.userId" class="flex justify-between items-center text-xs py-1 border-b border-white/10 last:border-0">
-                     <span class="text-white/90">{{ winner.userName }}</span>
-                     <span class="text-yellow-300 font-bold">+{{ winner.winAmount }}</span>
+                     <span class="text-white/90 truncate max-w-[80px]">{{ winner.userName }}</span>
+                     <span class="text-yellow-300 font-bold shrink-0">+{{ winner.winAmount }}</span>
                    </div>
                 </div>
               </div>
