@@ -70,6 +70,11 @@ export interface Message {
   pollData?: PollData;
   toastId?: string;
   toastData?: ToastData;
+  quote?: {
+    id: string;
+    text: string;
+    senderName: string;
+  };
 }
 
 const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
@@ -90,6 +95,7 @@ const lastGrabResult = ref<{ success: boolean; amount?: number; message?: string
 const lastError = ref<string | null>(null);
 const fireworksSignal = ref(0);
 const cheersSignal = ref(0);
+const replyingTo = ref<Message | null>(null);
 
 // Reactive timestamp to trigger periodic updates for message expiration
 const now = ref(Date.now());
@@ -204,7 +210,16 @@ export function useChat() {
   };
 
   const sendMessage = (text: string, image: string | null = null) => {
-    socket.emit('sendMessage', { text, image });
+    socket.emit('sendMessage', { 
+      text, 
+      image,
+      quote: replyingTo.value ? {
+        id: replyingTo.value.id,
+        text: replyingTo.value.text || '[图片]',
+        senderName: replyingTo.value.senderName
+      } : undefined
+    });
+    replyingTo.value = null; // Clear reply after sending
   };
 
   const updateName = (name: string) => {
@@ -277,6 +292,8 @@ export function useChat() {
     lastGrabResult,
     lastError,
     fireworksSignal,
-    cheersSignal
+    cheersSignal,
+    replyingTo,
+    setReplyTo: (msg: Message | null) => replyingTo.value = msg
   };
 }

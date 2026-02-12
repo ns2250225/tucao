@@ -6,6 +6,19 @@
     </div>
 
     <div class="flex-1 flex flex-col gap-2">
+      <!-- Reply Preview -->
+      <div v-if="replyingTo" class="flex items-center gap-2 bg-gray-100 p-2 rounded-lg text-sm text-gray-600 border-l-4 border-primary">
+        <div class="flex-1 truncate">
+          <span class="font-bold text-primary mr-1">回复 {{ replyingTo.senderName }}:</span>
+          <span>{{ replyingTo.text }}</span>
+        </div>
+        <button @click="setReplyTo(null)" class="text-gray-400 hover:text-gray-600 p-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
       <div class="relative">
         <textarea
           v-model="text"
@@ -352,7 +365,7 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, replyingTo, setReplyTo } = useChat();
 
 const isFireworksCoolingDown = ref(false);
 

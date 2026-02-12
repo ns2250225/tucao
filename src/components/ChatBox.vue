@@ -8,16 +8,24 @@
         :class="msg.senderId === currentUserId ? 'items-end' : 'items-start'"
       >
         <div 
-          class="max-w-[85%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:scale-[1.02] duration-200 border-2"
+          class="max-w-[85%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:scale-[1.02] duration-200 border-2 relative group"
           :class="[
             msg.senderId === currentUserId 
-              ? 'bg-primary text-white border-primary rounded-tr-none' 
+              ? 'bg-white text-text-color border-primary rounded-tr-none' 
               : 'bg-white text-text-color border-secondary rounded-tl-none'
           ]"
+          @contextmenu.prevent="handleContextMenu($event, msg)"
         >
           <div class="text-xs opacity-70 mb-1 font-bold tracking-wider uppercase">
             {{ msg.senderName }}
           </div>
+
+          <!-- Quoted Message -->
+          <div v-if="msg.quote" class="mb-2 p-2 rounded bg-black/5 border-l-4 border-gray-400 text-xs text-gray-500 italic">
+            <div class="font-bold not-italic mb-0.5">{{ msg.quote.senderName }}:</div>
+            <div class="truncate">{{ msg.quote.text }}</div>
+          </div>
+
           <div v-if="msg.image" class="mb-2 rounded-lg overflow-hidden border border-white/20">
              <img :src="msg.image" class="max-w-full max-h-64 object-cover block" />
           </div>
@@ -248,6 +256,23 @@
       </div>
     </div>
   </div>
+
+  <!-- Context Menu -->
+  <div 
+    v-if="contextMenu.visible"
+    class="fixed z-[300] bg-white rounded-lg shadow-xl border border-gray-100 py-1 min-w-[120px]"
+    :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
+  >
+    <div 
+      class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
+      @click="handleQuote"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+      </svg>
+      引用消息
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -259,8 +284,42 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers } = useChat();
+const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
+
+// Context Menu State
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  message: null as Message | null
+});
+
+const handleContextMenu = (e: MouseEvent, msg: Message) => {
+  e.preventDefault();
+  contextMenu.value = {
+    visible: true,
+    x: e.clientX,
+    y: e.clientY,
+    message: msg
+  };
+};
+
+const closeContextMenu = () => {
+  contextMenu.value.visible = false;
+};
+
+const handleQuote = () => {
+  if (contextMenu.value.message) {
+    setReplyTo(contextMenu.value.message);
+  }
+  closeContextMenu();
+};
+
+// Close context menu on click elsewhere
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', closeContextMenu);
+}
 
 // Toast Cheers Cooldown
 const isCheersCoolingDown = ref(false);

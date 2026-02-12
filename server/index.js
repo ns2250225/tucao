@@ -244,15 +244,17 @@ io.on('connection', (socket) => {
 
   // Handle new message
   socket.on('sendMessage', (payload) => {
-    // payload can be string (legacy) or object { text, image }
+    // payload can be string (legacy) or object { text, image, quote }
     let text = '';
     let image = null;
+    let quote = null;
 
     if (typeof payload === 'string') {
       text = payload;
     } else {
       text = payload.text || '';
       image = payload.image || null;
+      quote = payload.quote || null;
     }
 
     if (!text.trim() && !image) return;
@@ -261,6 +263,7 @@ io.on('connection', (socket) => {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       text: text,
       image: image,
+      quote: quote,
       senderId: socket.id,
       senderName: users[socket.id]?.name || '未知用户',
       timestamp: Date.now(),
