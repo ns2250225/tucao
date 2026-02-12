@@ -348,8 +348,8 @@ io.on('connection', (socket) => {
       }
     });
 
-    // Check if full (8 participants)
-    if (diceGame.participants.length >= 8) {
+    // Check if full (3 participants)
+    if (diceGame.participants.length >= 3) {
       settleDiceGame(diceGameId);
     }
   });

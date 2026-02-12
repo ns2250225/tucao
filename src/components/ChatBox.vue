@@ -203,7 +203,7 @@
                 <div>
                   <div class="font-bold text-sm">赌大小活动</div>
                   <div class="text-xs opacity-80">
-                    {{ msg.diceGameData?.participants.length || 0 }} / 8 人参与
+                    {{ msg.diceGameData?.participants.length || 0 }} / 3 人参与
                   </div>
                 </div>
               </div>
@@ -268,7 +268,7 @@
 
             </div>
             <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm">
-              满8人自动开奖 · 30分钟有效
+              满3人自动开奖 · 30分钟有效
             </div>
           </div>
 
