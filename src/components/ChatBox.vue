@@ -272,6 +272,51 @@
             </div>
           </div>
 
+          <!-- Kick Vote Message -->
+          <div v-else-if="msg.type === 'kickVote'" class="w-full">
+            <div class="bg-gray-800 text-white p-3 rounded-t-clay shadow-clay-sm min-w-[200px] md:min-w-[240px] space-y-3">
+              <div class="flex items-center gap-3 border-b border-white/20 pb-2">
+                <div class="bg-red-500 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-white shadow-inner animate-pulse">
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 2.197V17h10v-2.003A5.973 5.973 0 019 14zM21 12h-6" />
+                   </svg>
+                </div>
+                <div>
+                  <div class="font-bold text-sm text-red-400">踢人投票</div>
+                  <div class="text-xs opacity-80">
+                    目标: {{ msg.kickVoteData?.targetUserName }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center py-2">
+                <div class="text-sm mb-2 opacity-80">当前票数</div>
+                <div class="text-3xl font-bold font-mono">
+                  <span class="text-red-400">{{ msg.kickVoteData?.votes.length }}</span>
+                  <span class="text-white/30 text-xl">/</span>
+                  <span class="text-white/60 text-xl">{{ msg.kickVoteData?.requiredVotes }}</span>
+                </div>
+              </div>
+
+              <div v-if="msg.kickVoteData?.status === 'active'">
+                 <button 
+                   @click="handleVoteKick(msg.kickVoteId!)" 
+                   class="w-full clay-button bg-red-600 hover:bg-red-700 text-white py-2 text-sm flex items-center justify-center gap-2"
+                   :disabled="hasVotedKick(msg)"
+                 >
+                   <span v-if="hasVotedKick(msg)">已投票</span>
+                   <span v-else>同意踢出</span>
+                 </button>
+              </div>
+              <div v-else class="bg-black/30 p-2 rounded-clay text-center text-sm font-bold text-red-400 shadow-inner">
+                {{ msg.kickVoteData?.status === 'success' ? '投票通过，用户已被踢出' : '投票结束' }}
+              </div>
+            </div>
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm">
+              满3票自动执行
+            </div>
+          </div>
+
           <div v-else-if="msg.text" class="text-base break-all whitespace-pre-wrap font-sans leading-relaxed">
             {{ msg.text }}
           </div>
@@ -363,6 +408,15 @@
       </svg>
       引用消息
     </div>
+    <div 
+      class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
+      @click="handleInitiateKick"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 2.197V17h10v-2.003A5.973 5.973 0 019 14zM21 12h-6" />
+      </svg>
+      <span class="text-red-500 font-bold">发起踢出</span>
+    </div>
   </div>
 
   <!-- Image Preview Modal -->
@@ -446,7 +500,7 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame } = useChat();
+const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame, initiateKickVote, voteKick } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
 const previewImage = ref<string | null>(null);
 
@@ -522,6 +576,34 @@ const handleQuote = () => {
     setReplyTo(contextMenu.value.message);
   }
   closeContextMenu();
+};
+
+const handleInitiateKick = () => {
+  if (contextMenu.value.message) {
+    // Prevent kicking self or system
+    if (contextMenu.value.message.senderId === props.currentUserId) {
+      alert('不能踢出自己');
+      closeContextMenu();
+      return;
+    }
+    if (contextMenu.value.message.type === 'system') {
+      alert('不能踢出系统');
+      closeContextMenu();
+      return;
+    }
+    
+    initiateKickVote(contextMenu.value.message.senderId);
+  }
+  closeContextMenu();
+};
+
+const handleVoteKick = (kickVoteId: string) => {
+  voteKick(kickVoteId);
+};
+
+const hasVotedKick = (msg: Message) => {
+  if (!msg.kickVoteData || !props.currentUserId) return false;
+  return msg.kickVoteData.votes.includes(props.currentUserId);
 };
 
 // Close context menu on click elsewhere

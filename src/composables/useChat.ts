@@ -79,6 +79,14 @@ export interface DiceGameData {
   result?: DiceGameResult;
 }
 
+export interface KickVoteData {
+  targetUserId: string;
+  targetUserName: string;
+  votes: string[]; // User IDs who voted
+  requiredVotes: number;
+  status: 'active' | 'success' | 'failed';
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -86,7 +94,7 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast' | 'diceGame';
+  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast' | 'diceGame' | 'kickVote';
   redPacketId?: string;
   lotteryId?: string;
   lotteryData?: LotteryData;
@@ -96,6 +104,8 @@ export interface Message {
   toastData?: ToastData;
   diceGameId?: string;
   diceGameData?: DiceGameData;
+  kickVoteId?: string;
+  kickVoteData?: KickVoteData;
   quote?: {
     id: string;
     text: string;
@@ -213,6 +223,13 @@ export function initChat() {
         msg.diceGameData = data.diceGameData;
       }
     });
+
+    socket.on('kickVoteUpdated', (data: { kickVoteId: string, kickVoteData: KickVoteData }) => {
+      const msg = state.messages.find(m => m.kickVoteId === data.kickVoteId);
+      if (msg) {
+        msg.kickVoteData = data.kickVoteData;
+      }
+    });
   });
 
   onUnmounted(() => {
@@ -231,6 +248,7 @@ export function initChat() {
     socket.off('cheers');
     socket.off('pollUpdated');
     socket.off('diceGameUpdated');
+    socket.off('kickVoteUpdated');
   });
 }
 
@@ -309,6 +327,14 @@ export function useChat() {
     socket.emit('joinDiceGame', { diceGameId, betType, amount });
   };
 
+  const initiateKickVote = (targetUserId: string) => {
+    socket.emit('initiateKickVote', { targetUserId });
+  };
+
+  const voteKick = (kickVoteId: string) => {
+    socket.emit('voteKick', { kickVoteId });
+  };
+
   // Filter messages older than 30 minutes
   const visibleMessages = computed(() => {
     const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
@@ -333,6 +359,8 @@ export function useChat() {
     sendCheers,
     createDiceGame,
     joinDiceGame,
+    initiateKickVote,
+    voteKick,
     lastGrabResult,
     lastError,
     fireworksSignal,

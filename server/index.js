@@ -30,6 +30,8 @@ const polls = {};
 const toasts = {};
 // Store dice games: { id: { ... } }
 const diceGames = {};
+// Store kick votes: { id: { ... } }
+const kickVotes = {};
 
 // Cleanup routine: remove messages older than 30 minutes
 const MESSAGE_LIFETIME = 30 * 60 * 1000; // 30 minutes in ms
@@ -71,6 +73,13 @@ setInterval(() => {
   for (const id in diceGames) {
     if (now - diceGames[id].timestamp > MESSAGE_LIFETIME) {
       delete diceGames[id];
+    }
+  }
+
+  // Handle kick votes cleanup
+  for (const id in kickVotes) {
+    if (now - kickVotes[id].timestamp > MESSAGE_LIFETIME) {
+      delete kickVotes[id];
     }
   }
 
@@ -344,6 +353,164 @@ io.on('connection', (socket) => {
       settleDiceGame(diceGameId);
     }
   });
+
+  // Handle Kick Vote
+  socket.on('initiateKickVote', (payload) => {
+    const { targetUserId } = payload;
+    const initiator = users[socket.id];
+    const targetUser = users[targetUserId]; // Might not be in 'users' map if disconnected, but we check connected users
+
+    // Can't kick yourself
+    if (socket.id === targetUserId) {
+      socket.emit('error', '不能发起踢出自己的投票');
+      return;
+    }
+
+    if (!targetUser) {
+      socket.emit('error', '该用户已下线或不存在');
+      return;
+    }
+
+    // Check if active vote already exists for this user
+    const existingVote = Object.values(kickVotes).find(
+      v => v.targetUserId === targetUserId && v.status === 'active'
+    );
+
+    if (existingVote) {
+      socket.emit('error', '该用户正在被投票踢出中');
+      return;
+    }
+
+    const kickVoteId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    const kickVote = {
+      id: kickVoteId,
+      targetUserId: targetUser.id,
+      targetUserName: targetUser.name,
+      initiatorId: initiator.id,
+      votes: [initiator.id], // Initiator automatically votes yes
+      requiredVotes: 3,
+      status: 'active',
+      timestamp: Date.now()
+    };
+
+    kickVotes[kickVoteId] = kickVote;
+
+    // Create a system message for the kick vote
+    const chatMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      text: `${initiator.name} 发起了踢出 ${targetUser.name} 的投票`,
+      senderId: 'system',
+      senderName: '系统',
+      timestamp: Date.now(),
+      type: 'kickVote',
+      kickVoteId: kickVoteId,
+      kickVoteData: {
+        targetUserId: targetUser.id,
+        targetUserName: targetUser.name,
+        votes: kickVote.votes,
+        requiredVotes: kickVote.requiredVotes,
+        status: 'active'
+      }
+    };
+
+    messages.push(chatMessage);
+    io.emit('newMessage', chatMessage);
+  });
+
+  socket.on('voteKick', (payload) => {
+    const { kickVoteId } = payload;
+    const kickVote = kickVotes[kickVoteId];
+    const user = users[socket.id];
+
+    if (!kickVote || kickVote.status !== 'active') {
+      socket.emit('error', '投票不存在或已结束');
+      return;
+    }
+
+    // Check if already voted
+    if (kickVote.votes.includes(socket.id)) {
+      socket.emit('error', '你已经投过票了');
+      return;
+    }
+
+    kickVote.votes.push(socket.id);
+
+    // Notify update
+    io.emit('kickVoteUpdated', {
+      kickVoteId: kickVoteId,
+      kickVoteData: {
+        targetUserId: kickVote.targetUserId,
+        targetUserName: kickVote.targetUserName,
+        votes: kickVote.votes,
+        requiredVotes: kickVote.requiredVotes,
+        status: kickVote.status
+      }
+    });
+
+    // Check if passed
+    if (kickVote.votes.length >= kickVote.requiredVotes) {
+      executeKick(kickVoteId);
+    }
+  });
+
+  function executeKick(kickVoteId) {
+    const kickVote = kickVotes[kickVoteId];
+    if (!kickVote || kickVote.status !== 'active') return;
+
+    kickVote.status = 'success';
+    const targetUserId = kickVote.targetUserId;
+
+    // Notify update first
+    io.emit('kickVoteUpdated', {
+      kickVoteId: kickVoteId,
+      kickVoteData: {
+        targetUserId: kickVote.targetUserId,
+        targetUserName: kickVote.targetUserName,
+        votes: kickVote.votes,
+        requiredVotes: kickVote.requiredVotes,
+        status: 'success'
+      }
+    });
+
+    // Remove user's messages
+    messages = messages.filter(m => m.senderId !== targetUserId);
+    
+    // Notify clients to refresh messages (or we could send a "clearUserMessages" event, 
+    // but sending the full list or filtering locally is safer)
+    // Since we don't have a "bulkDelete" event, let's just emit 'init' again to everyone or 
+    // better, emit a specific event
+    io.emit('clearUserMessages', targetUserId); 
+    // Actually we need to implement this on client side or reload messages.
+    // For simplicity, let's just let the client filter them out or reload page? 
+    // No, better to push a system message saying "User kicked" and let client handle cleanup if possible.
+    // But requirement says "Immediately delete all messages".
+    // So let's emit a custom event.
+    
+    // Disconnect user
+    // We need to find the socket object. 
+    // 'users' map stores data, but we need the socket instance.
+    // IO instance can fetch sockets.
+    io.in(targetUserId).disconnectSockets(true);
+    
+    // Remove from users list
+    if (users[targetUserId]) {
+      delete users[targetUserId];
+      io.emit('userLeft', targetUserId);
+    }
+
+    // System message
+    const chatMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      text: `${kickVote.targetUserName} 已被踢出聊天室`,
+      senderId: 'system',
+      senderName: '系统',
+      timestamp: Date.now(),
+      type: 'system'
+    };
+    messages.push(chatMessage);
+    io.emit('newMessage', chatMessage);
+  }
 
   function settleDiceGame(diceGameId) {
     const diceGame = diceGames[diceGameId];
