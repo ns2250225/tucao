@@ -1,13 +1,13 @@
 <template>
-  <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-secondary flex flex-col md:flex-row gap-4 relative">
+  <div class="p-4 clay-card flex flex-col md:flex-row gap-4 relative">
     <!-- Emoji Picker Popover -->
-    <div v-if="showEmojiPicker" class="absolute bottom-full left-0 mb-2 z-50 shadow-xl rounded-xl overflow-hidden">
+    <div v-if="showEmojiPicker" class="absolute bottom-full left-0 mb-2 z-50 shadow-clay rounded-clay overflow-hidden">
       <EmojiPicker :native="true" @select="onSelectEmoji" />
     </div>
 
     <div class="flex-1 flex flex-col gap-2">
       <!-- Reply Preview -->
-      <div v-if="replyingTo" class="flex items-center gap-2 bg-gray-100 p-2 rounded-lg text-sm text-gray-600 border-l-4 border-primary">
+      <div v-if="replyingTo" class="flex items-center gap-2 bg-gray-50 p-2 rounded-clay text-sm text-gray-600 border-l-4 border-primary shadow-inner">
         <div class="flex-1 truncate">
           <span class="font-bold text-primary mr-1">回复 {{ replyingTo.senderName }}:</span>
           <span>{{ replyingTo.text }}</span>
@@ -24,7 +24,7 @@
           v-model="text"
           @keydown.enter.prevent="handleEnter"
           placeholder="在此输入你的槽点... (回车发送)"
-          class="w-full bg-background border-2 border-secondary/30 rounded-lg p-3 text-text-color placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none h-16 md:h-24 custom-scrollbar font-sans"
+          class="w-full clay-input resize-none h-16 md:h-24 custom-scrollbar font-sans"
         ></textarea>
       </div>
         
@@ -143,7 +143,7 @@
     
     <button 
       @click="send"
-      class="w-full md:w-24 bg-cta hover:bg-green-600 text-white rounded-lg font-bold font-serif text-lg shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 md:flex-col md:gap-1 group shrink-0 py-3 md:py-0"
+      class="w-full md:w-24 clay-button bg-cta flex items-center justify-center gap-2 md:flex-col md:gap-1 group shrink-0 py-3 md:py-0"
       :disabled="!text.trim() && !imagePreview"
     >
       <span>吐槽</span>

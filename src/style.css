@@ -1,15 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Libre+Bodoni:wght@400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: 'Public Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Libre Bodoni', serif;
+@layer components {
+  .clay-card {
+    @apply bg-white rounded-clay-lg shadow-clay border-2 border-white/50 backdrop-blur-sm transition-all duration-300;
+  }
+  
+  .clay-button {
+    @apply bg-primary text-white rounded-clay shadow-clay hover:shadow-clay-sm hover:scale-[0.98] transition-all duration-200 active:shadow-clay-inset font-bold;
+  }
+
+  .clay-input {
+    @apply bg-white rounded-clay shadow-clay-inset border-none focus:ring-2 focus:ring-primary/50 outline-none p-3 transition-all duration-200;
+  }
 }
 
 body {

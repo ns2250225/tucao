@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 overflow-y-auto p-2 md:p-6 space-y-4 bg-white/50 backdrop-blur-sm rounded-xl shadow-inner custom-scrollbar" ref="chatContainer">
+  <div class="flex-1 overflow-y-auto p-2 md:p-6 space-y-4 bg-white/40 backdrop-blur-md rounded-clay-lg shadow-clay-inset custom-scrollbar" ref="chatContainer">
     <TransitionGroup name="list" tag="div" class="space-y-4 pb-2">
       <div 
         v-for="msg in messages" 
@@ -8,11 +8,11 @@
         :class="msg.senderId === currentUserId ? 'items-end' : 'items-start'"
       >
         <div 
-          class="max-w-[85%] md:max-w-[70%] p-4 rounded-2xl shadow-md transition-all hover:scale-[1.02] duration-200 border-2 relative group"
+          class="max-w-[85%] md:max-w-[70%] p-4 clay-card relative group"
           :class="[
             msg.senderId === currentUserId 
-              ? 'bg-white text-text-color border-primary rounded-tr-none' 
-              : 'bg-white text-text-color border-secondary rounded-tl-none'
+              ? 'rounded-tr-sm border-primary/20' 
+              : 'rounded-tl-sm border-secondary/20'
           ]"
           @contextmenu.prevent="handleContextMenu($event, msg)"
         >
@@ -35,9 +35,9 @@
           </div>
           
           <!-- Red Packet Message -->
-          <div v-if="msg.type === 'redPacket'" class="cursor-pointer" @click="handleGrabRedPacket(msg.redPacketId!)">
-            <div class="bg-red-500 text-white p-3 rounded-lg flex items-center gap-3 min-w-[200px] md:min-w-[240px]">
-              <div class="bg-yellow-100 p-2 rounded-full shrink-0">
+          <div v-if="msg.type === 'redPacket'" class="cursor-pointer group" @click="handleGrabRedPacket(msg.redPacketId!)">
+            <div class="bg-red-500 text-white p-3 rounded-t-clay shadow-clay-sm flex items-center gap-3 min-w-[200px] md:min-w-[240px] transition-transform group-hover:scale-[1.02]">
+              <div class="bg-yellow-100 p-2 rounded-full shrink-0 shadow-inner">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clip-rule="evenodd" />
                   <path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z" />
@@ -48,16 +48,16 @@
                 <div class="text-xs opacity-80">领取红包</div>
               </div>
             </div>
-            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100">
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm">
               在线吐槽红包
             </div>
           </div>
 
           <!-- Lottery Message -->
           <div v-else-if="msg.type === 'lottery'" class="w-full">
-            <div class="bg-blue-500 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
+            <div class="bg-blue-500 text-white p-3 rounded-t-clay shadow-clay-sm min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
-                <div class="bg-blue-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center">
+                <div class="bg-blue-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center shadow-inner">
                    <span class="text-xl">🎁</span>
                 </div>
                 <div>
@@ -68,7 +68,7 @@
                 </div>
               </div>
               
-              <div v-if="msg.lotteryData?.prizeImage" class="rounded-lg overflow-hidden border-2 border-white/20 bg-white/10 relative group">
+              <div v-if="msg.lotteryData?.prizeImage" class="rounded-clay overflow-hidden border-2 border-white/20 bg-white/10 relative group shadow-inner">
                 <img 
                   :src="msg.lotteryData.prizeImage" 
                   class="w-full h-32 object-cover cursor-zoom-in" 
@@ -80,30 +80,30 @@
               <div v-if="msg.lotteryData?.status === 'active'">
                  <button 
                    @click="handleJoinLottery(msg.lotteryId!)" 
-                   class="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold py-2 rounded-lg text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-1"
+                   class="w-full clay-button bg-yellow-400 hover:bg-yellow-300 text-blue-900 py-2 text-sm flex items-center justify-center gap-1"
                  >
                    <span>👋</span> 点击参与
                  </button>
               </div>
-              <div v-else class="bg-white/20 p-2 rounded-lg text-xs space-y-2 animate-pulse-once">
+              <div v-else class="bg-white/20 p-2 rounded-clay text-xs space-y-2 animate-pulse-once shadow-inner">
                 <div class="font-bold text-center text-yellow-300 text-lg">🎉 已开奖 🎉</div>
                 <div class="text-center">中奖者: <span class="font-bold text-base">{{ msg.lotteryData?.winnerName }}</span></div>
-                <div v-if="msg.lotteryData?.contactInfo" class="bg-white text-blue-900 p-2 rounded font-mono text-center select-all border-2 border-blue-200">
+                <div v-if="msg.lotteryData?.contactInfo" class="bg-white text-blue-900 p-2 rounded-clay font-mono text-center select-all border-2 border-blue-200 shadow-sm">
                   <div class="text-[10px] text-gray-500 mb-0.5">发起者联系方式</div>
                   {{ msg.lotteryData.contactInfo }}
                 </div>
               </div>
             </div>
-            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm">
               拼手气抽奖
             </div>
           </div>
 
           <!-- Poll Message -->
           <div v-else-if="msg.type === 'poll'" class="w-full">
-            <div class="bg-orange-500 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
+            <div class="bg-orange-500 text-white p-3 rounded-t-clay shadow-clay-sm min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
-                <div class="bg-orange-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-orange-500">
+                <div class="bg-orange-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-orange-500 shadow-inner">
                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                    </svg>
@@ -123,7 +123,7 @@
               <div class="space-y-2">
                 <div v-for="option in msg.pollData?.options" :key="option.id" class="relative">
                   <!-- Result Bar Background -->
-                  <div class="absolute inset-0 bg-white/10 rounded-lg overflow-hidden">
+                  <div class="absolute inset-0 bg-white/10 rounded-clay overflow-hidden shadow-inner">
                     <div 
                       class="h-full bg-white/30 transition-all duration-500 ease-out"
                       :style="{ width: `${msg.pollData?.totalVotes ? (option.count / msg.pollData.totalVotes * 100) : 0}%` }"
@@ -133,7 +133,7 @@
                   <!-- Option Content -->
                   <button 
                     @click="handleVote(msg.pollId!, option.id)"
-                    class="relative w-full text-left py-2 px-3 rounded-lg border border-white/20 hover:bg-white/5 transition-colors flex justify-between items-center group z-10 disabled:cursor-default"
+                    class="relative w-full text-left py-2 px-3 rounded-clay border border-white/20 hover:bg-white/5 transition-colors flex justify-between items-center group z-10 disabled:cursor-default"
                     :disabled="hasVoted(msg)"
                   >
                     <span class="text-sm font-medium truncate flex-1 mr-2">{{ option.text }}</span>
@@ -148,20 +148,20 @@
                 </div>
               </div>
               
-              <div v-if="hasVoted(msg)" class="text-center text-xs bg-white/20 rounded py-1">
+              <div v-if="hasVoted(msg)" class="text-center text-xs bg-white/20 rounded-clay py-1 shadow-inner">
                 ✅ 您已参与投票
               </div>
             </div>
-            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm">
               30分钟后截止
             </div>
           </div>
 
           <!-- Toast Message -->
           <div v-else-if="msg.type === 'toast'" class="w-full">
-            <div class="bg-yellow-500 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
+            <div class="bg-yellow-500 text-white p-3 rounded-t-clay shadow-clay-sm min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
-                <div class="bg-yellow-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-yellow-500">
+                <div class="bg-yellow-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-yellow-500 shadow-inner">
                    <span class="text-xl">🍻</span>
                 </div>
                 <div>
@@ -172,7 +172,7 @@
                 </div>
               </div>
               
-              <div class="rounded-lg overflow-hidden border-2 border-white/20 bg-white/10 relative group flex justify-center bg-white">
+              <div class="rounded-clay overflow-hidden border-2 border-white/20 bg-white/10 relative group flex justify-center bg-white shadow-inner">
                 <img 
                   :src="msg.toastData?.image" 
                   class="h-40 object-contain cursor-zoom-in" 
@@ -182,22 +182,22 @@
 
               <button 
                 @click="handleCheers(msg.toastId!)" 
-                class="w-full bg-white text-yellow-600 font-bold py-2 rounded-lg text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-50"
+                class="w-full clay-button bg-white text-yellow-600 hover:bg-yellow-50 py-2 text-sm flex items-center justify-center gap-2"
                 :disabled="isCheersCoolingDown"
               >
                 <span>🍻</span> {{ isCheersCoolingDown ? '冷却中...' : '干杯' }}
               </button>
             </div>
-            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm">
               30分钟后结束
             </div>
           </div>
 
           <!-- Dice Game Message -->
           <div v-else-if="msg.type === 'diceGame'" class="w-full">
-            <div class="bg-green-600 text-white p-3 rounded-t-lg min-w-[200px] md:min-w-[240px] space-y-3">
+            <div class="bg-green-600 text-white p-3 rounded-t-clay shadow-clay-sm min-w-[200px] md:min-w-[240px] space-y-3">
               <div class="flex items-center gap-3 border-b border-white/20 pb-2">
-                <div class="bg-green-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-green-600">
+                <div class="bg-green-100 w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-green-600 shadow-inner">
                    <span class="text-xl">🎲</span>
                 </div>
                 <div>
@@ -213,7 +213,7 @@
                 <div class="grid grid-cols-3 gap-2">
                    <button 
                      @click="openDiceBetModal(msg.diceGameId!, 'big')"
-                     class="bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                     class="clay-button bg-red-500 hover:bg-red-600 py-2 flex flex-col items-center justify-center"
                      :disabled="hasJoinedDiceGame(msg)"
                    >
                      <span class="text-lg">大</span>
@@ -221,7 +221,7 @@
                    </button>
                    <button 
                      @click="openDiceBetModal(msg.diceGameId!, 'leopard')"
-                     class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                     class="clay-button bg-yellow-500 hover:bg-yellow-600 py-2 flex flex-col items-center justify-center"
                      :disabled="hasJoinedDiceGame(msg)"
                    >
                      <span class="text-lg">围骰</span>
@@ -229,14 +229,14 @@
                    </button>
                    <button 
                      @click="openDiceBetModal(msg.diceGameId!, 'small')"
-                     class="bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-bold shadow-sm transition-transform active:scale-95 flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                     class="clay-button bg-blue-500 hover:bg-blue-600 py-2 flex flex-col items-center justify-center"
                      :disabled="hasJoinedDiceGame(msg)"
                    >
                      <span class="text-lg">小</span>
                      <span class="text-[10px] opacity-80">1:1</span>
                    </button>
                 </div>
-                <div v-if="hasJoinedDiceGame(msg)" class="text-center text-xs bg-black/20 rounded py-1">
+                <div v-if="hasJoinedDiceGame(msg)" class="text-center text-xs bg-black/20 rounded-clay py-1 shadow-inner">
                   ✅ 您已下注: {{ getMyBet(msg)?.betAmount }}元 ({{ getBetLabel(getMyBet(msg)?.betType) }})
                 </div>
               </div>
@@ -245,7 +245,7 @@
               <div v-else class="space-y-3">
                 <div class="flex justify-center gap-4 py-2">
                   <div v-for="(dice, idx) in msg.diceGameData?.result?.dice" :key="idx" 
-                    class="w-8 h-8 md:w-10 md:h-10 bg-white rounded-lg flex items-center justify-center shadow-lg text-black font-bold text-lg md:text-xl border-2 border-gray-200"
+                    class="w-8 h-8 md:w-10 md:h-10 bg-white rounded-clay flex items-center justify-center shadow-lg text-black font-bold text-lg md:text-xl border-2 border-gray-200"
                   >
                     {{ dice }}
                   </div>
@@ -255,7 +255,7 @@
                 </div>
                 
                 <!-- Winner List -->
-                <div class="bg-black/20 rounded-lg p-2 max-h-32 overflow-y-auto custom-scrollbar">
+                <div class="bg-black/20 rounded-clay p-2 max-h-32 overflow-y-auto custom-scrollbar shadow-inner">
                    <div v-if="!msg.diceGameData?.result?.winners.length" class="text-center text-xs opacity-60 py-2">
                      无人中奖
                    </div>
@@ -267,7 +267,7 @@
               </div>
 
             </div>
-            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-lg border-t border-gray-100 shadow-sm">
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm">
               满8人自动开奖 · 30分钟有效
             </div>
           </div>
