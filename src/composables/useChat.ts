@@ -148,6 +148,10 @@ export function initChat() {
 
     socket.on('connect', () => {
       state.isConnected = true;
+      const savedName = localStorage.getItem('chat_username');
+      if (savedName) {
+        socket.emit('updateName', savedName);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -282,6 +286,7 @@ export function useChat() {
   };
 
   const updateName = (name: string) => {
+    localStorage.setItem('chat_username', name);
     socket.emit('updateName', name);
     // Optimistic update
     if (state.currentUser) {
@@ -338,6 +343,10 @@ export function useChat() {
     socket.emit('initiateKickVote', { targetUserId });
   };
 
+  const adminKick = (targetUserId: string) => {
+    socket.emit('adminKick', { targetUserId });
+  };
+
   const voteKick = (kickVoteId: string) => {
     socket.emit('voteKick', { kickVoteId });
   };
@@ -367,6 +376,7 @@ export function useChat() {
     createDiceGame,
     joinDiceGame,
     initiateKickVote,
+    adminKick,
     voteKick,
     lastGrabResult,
     lastError,

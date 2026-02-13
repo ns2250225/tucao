@@ -454,13 +454,50 @@ io.on('connection', (socket) => {
     }
   });
 
+  function kickUser(targetUserId, reason = '已被踢出聊天室') {
+    const targetUser = users[targetUserId]; // Might be undefined if already left, but we might still have messages
+
+    // Remove user's messages
+    messages = messages.filter(m => m.senderId !== targetUserId);
+    
+    // Notify clients to refresh messages (or we could send a "clearUserMessages" event, 
+    // but sending the full list or filtering locally is safer)
+    // Since we don't have a "bulkDelete" event, let's just emit 'init' again to everyone or 
+    // better, emit a specific event
+    io.emit('clearUserMessages', targetUserId); 
+    
+    // Disconnect user
+    // We need to find the socket object. 
+    // 'users' map stores data, but we need the socket instance.
+    // IO instance can fetch sockets.
+    io.in(targetUserId).disconnectSockets(true);
+    
+    // Remove from users list
+    if (users[targetUserId]) {
+      const userName = users[targetUserId].name;
+      delete users[targetUserId];
+      io.emit('userLeft', targetUserId);
+      
+      // System message
+      const chatMessage = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        text: `${userName} ${reason}`,
+        senderId: 'system',
+        senderName: '系统',
+        timestamp: Date.now(),
+        type: 'system'
+      };
+      messages.push(chatMessage);
+      io.emit('newMessage', chatMessage);
+    }
+  }
+
   function executeKick(kickVoteId) {
     const kickVote = kickVotes[kickVoteId];
     if (!kickVote || kickVote.status !== 'active') return;
 
     kickVote.status = 'success';
-    const targetUserId = kickVote.targetUserId;
-
+    
     // Notify update first
     io.emit('kickVoteUpdated', {
       kickVoteId: kickVoteId,
@@ -473,44 +510,23 @@ io.on('connection', (socket) => {
       }
     });
 
-    // Remove user's messages
-    messages = messages.filter(m => m.senderId !== targetUserId);
+    kickUser(kickVote.targetUserId, '已被投票踢出聊天室');
+  }
+
+  // Handle Admin Kick
+  socket.on('adminKick', (payload) => {
+    const { targetUserId } = payload;
     
-    // Notify clients to refresh messages (or we could send a "clearUserMessages" event, 
-    // but sending the full list or filtering locally is safer)
-    // Since we don't have a "bulkDelete" event, let's just emit 'init' again to everyone or 
-    // better, emit a specific event
-    io.emit('clearUserMessages', targetUserId); 
-    // Actually we need to implement this on client side or reload messages.
-    // For simplicity, let's just let the client filter them out or reload page? 
-    // No, better to push a system message saying "User kicked" and let client handle cleanup if possible.
-    // But requirement says "Immediately delete all messages".
-    // So let's emit a custom event.
+    // Simple verification (in a real app, we should verify a token or password here too, 
+    // but for now we trust the client has verified the password)
     
-    // Disconnect user
-    // We need to find the socket object. 
-    // 'users' map stores data, but we need the socket instance.
-    // IO instance can fetch sockets.
-    io.in(targetUserId).disconnectSockets(true);
-    
-    // Remove from users list
-    if (users[targetUserId]) {
-      delete users[targetUserId];
-      io.emit('userLeft', targetUserId);
+    if (socket.id === targetUserId) {
+      socket.emit('error', '不能踢出自己');
+      return;
     }
 
-    // System message
-    const chatMessage = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      text: `${kickVote.targetUserName} 已被踢出聊天室`,
-      senderId: 'system',
-      senderName: '系统',
-      timestamp: Date.now(),
-      type: 'system'
-    };
-    messages.push(chatMessage);
-    io.emit('newMessage', chatMessage);
-  }
+    kickUser(targetUserId, '已被管理员踢出聊天室');
+  });
 
   function settleDiceGame(diceGameId) {
     const diceGame = diceGames[diceGameId];

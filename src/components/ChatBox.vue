@@ -590,7 +590,7 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame, initiateKickVote, voteKick } = useChat();
+const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame, initiateKickVote, adminKick, voteKick } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
 const previewImage = ref<string | null>(null);
 
@@ -721,7 +721,8 @@ const closeKickPasswordModal = () => {
 const submitKickPassword = () => {
   if (kickPasswordInput.value === '1a2b3c4d') {
     if (pendingKickTargetId.value) {
-      initiateKickVote(pendingKickTargetId.value);
+      // Changed to adminKick for direct kick without voting
+      adminKick(pendingKickTargetId.value);
     }
     closeKickPasswordModal();
   } else {
