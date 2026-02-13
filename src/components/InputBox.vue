@@ -435,7 +435,7 @@ watch(text, (newText) => {
   if (showMentionList.value) {
     const match = newText.match(/@([^@\s]*)$/);
     if (match) {
-      mentionFilter.value = match[1];
+      mentionFilter.value = match[1] || '';
     } else {
       showMentionList.value = false;
     }
@@ -624,12 +624,43 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
+const handleEscKey = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    if (showEmojiPicker.value) {
+      showEmojiPicker.value = false;
+      return;
+    }
+    if (showMentionList.value) {
+      showMentionList.value = false;
+      return;
+    }
+    if (showRedPacketModal.value) {
+      showRedPacketModal.value = false;
+      return;
+    }
+    if (showLotteryModal.value) {
+      showLotteryModal.value = false;
+      return;
+    }
+    if (showPollModal.value) {
+      showPollModal.value = false;
+      return;
+    }
+    if (showToastModal.value) {
+      showToastModal.value = false;
+      return;
+    }
+  }
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
+  document.addEventListener('keydown', handleEscKey);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('keydown', handleEscKey);
 });
 
 const triggerImageUpload = () => {

@@ -124,7 +124,7 @@
   </template>
 
 <script setup lang="ts">
-import { onMounted, watch, ref } from 'vue';
+import { onMounted, onUnmounted, watch, ref } from 'vue';
 import { useChat, initChat } from './composables/useChat';
 import ChatBox from './components/ChatBox.vue';
 import UserList from './components/UserList.vue';
@@ -138,6 +138,14 @@ const { state, visibleMessages, connect, sendMessage, updateName, lastError, fir
 
 const showMobileUserList = ref(false);
 const showFireworksText = ref(false);
+
+const handleEscKey = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    if (showMobileUserList.value) {
+      showMobileUserList.value = false;
+    }
+  }
+};
 
 // Danmaku Logic
 const danmakuList = ref<{ id: number; text: string; top: number; duration: number; color: string }[]>([]);
@@ -234,6 +242,11 @@ watch(fireworksSignal, () => {
 
 onMounted(() => {
   connect();
+  document.addEventListener('keydown', handleEscKey);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscKey);
 });
 </script>
 

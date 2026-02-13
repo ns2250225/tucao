@@ -340,62 +340,64 @@
   </div>
 
   <!-- Grab Result Modal -->
-  <div v-if="showResultModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="bg-red-500 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden text-center relative animate-bounce-in">
-      <button @click="showResultModal = false" class="absolute top-2 right-2 text-white/70 hover:text-white p-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      
-      <div class="pt-10 px-6" :class="resultGrabbedList.length > 0 ? 'pb-6' : 'pb-16'">
-        <div class="w-20 h-20 bg-yellow-100 rounded-full mx-auto flex items-center justify-center mb-4 shadow-lg border-4 border-yellow-300">
-           <span class="text-4xl">🧧</span>
-        </div>
+  <Teleport to="body">
+    <div v-if="showResultModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
+      <div class="bg-red-500 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden text-center relative animate-bounce-in pointer-events-auto">
+        <button @click="showResultModal = false" class="absolute top-2 right-2 text-white/70 hover:text-white p-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         
-        <h3 class="text-white font-bold text-xl mb-1">{{ resultSender }} 的红包</h3>
-        <p class="text-red-100 text-sm mb-6">{{ resultMessage }}</p>
-        
-        <div v-if="resultAmount" class="text-yellow-300 font-bold text-5xl mb-2 flex justify-center items-end gap-1">
-          {{ resultAmount.toFixed(2) }} <span class="text-lg mb-2">元</span>
-        </div>
-        <div v-else class="text-yellow-300 font-bold text-2xl mb-2">
-          {{ resultStatus }}
-        </div>
-        
-        <div v-if="resultAmount" class="text-red-200 text-xs mt-4">
-          已存入余额，可用于发红包
-        </div>
-
-        <div v-if="resultGrabbedList.length > 0" class="mt-8 bg-black/20 rounded-xl overflow-hidden text-left border border-white/10">
-          <div class="p-3 text-xs text-white/60 border-b border-white/10 flex justify-between items-center bg-black/10">
-             <span>领取详情</span>
-             <span>{{ resultGrabbedList.length }} 人已领</span>
+        <div class="pt-10 px-6" :class="resultGrabbedList.length > 0 ? 'pb-6' : 'pb-16'">
+          <div class="w-20 h-20 bg-yellow-100 rounded-full mx-auto flex items-center justify-center mb-4 shadow-lg border-4 border-yellow-300">
+             <span class="text-4xl">🧧</span>
           </div>
-          <div class="max-h-48 overflow-y-auto custom-scrollbar">
-            <div v-for="(record, index) in resultGrabbedList" :key="index" class="flex items-center justify-between p-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center text-xs text-red-500 font-bold shadow-sm">
-                  {{ record.userName.charAt(0) }}
+          
+          <h3 class="text-white font-bold text-xl mb-1">{{ resultSender }} 的红包</h3>
+          <p class="text-red-100 text-sm mb-6">{{ resultMessage }}</p>
+          
+          <div v-if="resultAmount" class="text-yellow-300 font-bold text-5xl mb-2 flex justify-center items-end gap-1">
+            {{ resultAmount.toFixed(2) }} <span class="text-lg mb-2">元</span>
+          </div>
+          <div v-else class="text-yellow-300 font-bold text-2xl mb-2">
+            {{ resultStatus }}
+          </div>
+          
+          <div v-if="resultAmount" class="text-red-200 text-xs mt-4">
+            已存入余额，可用于发红包
+          </div>
+
+          <div v-if="resultGrabbedList.length > 0" class="mt-8 bg-black/20 rounded-xl overflow-hidden text-left border border-white/10">
+            <div class="p-3 text-xs text-white/60 border-b border-white/10 flex justify-between items-center bg-black/10">
+               <span>领取详情</span>
+               <span>{{ resultGrabbedList.length }} 人已领</span>
+            </div>
+            <div class="max-h-48 overflow-y-auto custom-scrollbar">
+              <div v-for="(record, index) in resultGrabbedList" :key="index" class="flex items-center justify-between p-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center text-xs text-red-500 font-bold shadow-sm">
+                    {{ record.userName.charAt(0) }}
+                  </div>
+                  <div class="text-white text-sm text-left">
+                    <div class="font-medium truncate max-w-[80px]">{{ record.userName }}</div>
+                    <div class="text-[10px] text-white/50">{{ formatTime(record.timestamp) }}</div>
+                  </div>
                 </div>
-                <div class="text-white text-sm text-left">
-                  <div class="font-medium truncate max-w-[80px]">{{ record.userName }}</div>
-                  <div class="text-[10px] text-white/50">{{ formatTime(record.timestamp) }}</div>
+                <div class="text-yellow-300 font-bold text-sm">
+                  {{ record.amount.toFixed(2) }} <span class="text-[10px] font-normal text-yellow-100/70">元</span>
                 </div>
-              </div>
-              <div class="text-yellow-300 font-bold text-sm">
-                {{ record.amount.toFixed(2) }} <span class="text-[10px] font-normal text-yellow-100/70">元</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <div class="bg-[#d63031] p-4 text-center cursor-pointer hover:bg-[#c0392b] transition-colors text-white/80 text-sm" @click="showResultModal = false">
-        关闭
+        
+        <div class="bg-[#d63031] p-4 text-center cursor-pointer hover:bg-[#c0392b] transition-colors text-white/80 text-sm" @click="showResultModal = false">
+          关闭
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 
   <!-- Context Menu -->
   <div 
@@ -525,7 +527,7 @@
 
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { type Message, useChat, type RedPacketGrabbedRecord } from '../composables/useChat';
 
 const props = defineProps<{
@@ -536,6 +538,36 @@ const props = defineProps<{
 const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame, initiateKickVote, voteKick } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
 const previewImage = ref<string | null>(null);
+
+// Handle Esc key to close modals
+const handleEscKey = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    if (previewImage.value) {
+      previewImage.value = null;
+      return;
+    }
+    if (showResultModal.value) {
+      showResultModal.value = false;
+      return;
+    }
+    if (showDiceBetModal.value) {
+      closeDiceBetModal();
+      return;
+    }
+    if (contextMenu.value.visible) {
+      closeContextMenu();
+      return;
+    }
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('keydown', handleEscKey);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscKey);
+});
 
 // Dice Game Logic
 const showDiceBetModal = ref(false);
@@ -778,6 +810,7 @@ watch(() => props.messages.length, async (newLen, oldLen) => {
 
   if (newLen > oldLen) {
     const lastMsg = props.messages[newLen - 1];
+    if (!lastMsg) return;
     
     // Check for mentions
     if (props.currentUserId && lastMsg.mentions && lastMsg.mentions.includes(props.currentUserId)) {
