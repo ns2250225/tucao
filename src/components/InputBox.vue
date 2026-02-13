@@ -712,7 +712,10 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 const handleEnter = (e: KeyboardEvent) => {
   if (showMentionList.value && filteredUsers.value.length > 0) {
-    selectMention(filteredUsers.value[selectedIndex.value]);
+    const selectedUser = filteredUsers.value[selectedIndex.value];
+    if (selectedUser) {
+      selectMention(selectedUser);
+    }
     return;
   }
   if (!e.shiftKey) {
