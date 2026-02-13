@@ -106,6 +106,7 @@ export interface Message {
   diceGameData?: DiceGameData;
   kickVoteId?: string;
   kickVoteData?: KickVoteData;
+  mentions?: string[]; // Array of user IDs mentioned in the message
   quote?: {
     id: string;
     text: string;
@@ -261,10 +262,11 @@ export function useChat() {
     socket.disconnect();
   };
 
-  const sendMessage = (text: string, image: string | null = null) => {
+  const sendMessage = (text: string, image: string | null = null, mentions: string[] = []) => {
     socket.emit('sendMessage', { 
       text, 
       image,
+      mentions,
       quote: replyingTo.value ? {
         id: replyingTo.value.id,
         text: replyingTo.value.text || '[图片]',
@@ -346,7 +348,7 @@ export function useChat() {
     visibleMessages,
     connect,
     disconnect,
-    sendMessage,
+    sendMessage: (text: string, image: string | null = null, mentions: string[] = []) => sendMessage(text, image, mentions),
     updateName,
     sendRedPacket,
     grabRedPacket,

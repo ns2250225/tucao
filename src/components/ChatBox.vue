@@ -9,6 +9,7 @@
       <div 
         v-for="msg in messages" 
         :key="msg.id"
+        :id="'msg-' + msg.id"
         class="flex flex-col"
         :class="msg.senderId === currentUserId ? 'items-end' : 'items-start'"
       >
@@ -322,9 +323,7 @@
             </div>
           </div>
 
-          <div v-else-if="msg.text" class="text-base break-all whitespace-pre-wrap font-sans leading-relaxed">
-            {{ msg.text }}
-          </div>
+          <div v-else-if="msg.text" class="text-base break-all whitespace-pre-wrap font-sans leading-relaxed" v-html="formatText(msg)"></div>
           <div class="text-[10px] opacity-50 mt-2 text-right font-mono">
             {{ formatTime(msg.timestamp) }}
           </div>
@@ -505,6 +504,20 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
       </svg>
       <span>新消息</span>
+    </div>
+  </div>
+
+  <!-- Mention Tip -->
+  <div 
+    v-if="showMentionTip" 
+    class="absolute bottom-16 left-1/2 -translate-x-1/2 z-50 cursor-pointer animate-pulse"
+    @click="scrollToMention"
+  >
+    <div class="bg-red-500 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 hover:bg-red-600 transition-colors border-2 border-white">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+      <span>有人@你</span>
     </div>
   </div>
   </div>
@@ -700,7 +713,37 @@ const hasVoted = (msg: Message) => {
 
 // Scroll & New Message Logic
 const showNewMessageTip = ref(false);
+const showMentionTip = ref(false);
+const lastMentionedMessageId = ref<string | null>(null);
 const isAtBottom = ref(true);
+
+const formatText = (msg: Message) => {
+  if (!msg.text) return '';
+  let formatted = msg.text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  if (msg.mentions && msg.mentions.length > 0) {
+    formatted = formatted.replace(/(@[^\s]+)/g, '<span class="text-blue-600 font-bold bg-blue-50 px-1 rounded mx-0.5">$1</span>');
+  }
+  return formatted;
+};
+
+const scrollToMention = () => {
+  if (lastMentionedMessageId.value) {
+    const el = document.getElementById('msg-' + lastMentionedMessageId.value);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a temporary highlight effect
+      el.classList.add('ring-2', 'ring-red-500', 'ring-offset-2');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-red-500', 'ring-offset-2'), 2000);
+    }
+    showMentionTip.value = false;
+  }
+};
 
 const handleScroll = () => {
   if (!chatContainer.value) return;
@@ -736,9 +779,16 @@ watch(() => props.messages.length, async (newLen, oldLen) => {
   if (newLen > oldLen) {
     const lastMsg = props.messages[newLen - 1];
     
+    // Check for mentions
+    if (props.currentUserId && lastMsg.mentions && lastMsg.mentions.includes(props.currentUserId)) {
+      showMentionTip.value = true;
+      lastMentionedMessageId.value = lastMsg.id;
+    }
+
     // If I sent the message, scroll to bottom
     if (lastMsg.senderId === props.currentUserId) {
       scrollToBottom();
+      showMentionTip.value = false;
     } else {
       // For others' messages, show tip instead of auto-scrolling
       // regardless of whether we are at bottom or not (per user request to not auto-scroll)

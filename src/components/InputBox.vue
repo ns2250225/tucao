@@ -5,6 +5,24 @@
       <EmojiPicker :native="true" @select="onSelectEmoji" />
     </div>
 
+    <!-- User Mention List -->
+    <div v-if="showMentionList" class="absolute bottom-full left-0 mb-2 z-50 shadow-clay rounded-clay overflow-hidden bg-white w-48 max-h-48 overflow-y-auto custom-scrollbar">
+      <div 
+        v-for="user in filteredUsers" 
+        :key="user.id" 
+        class="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2 border-b border-gray-50 last:border-0"
+        @click="selectMention(user)"
+      >
+        <div class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+          {{ user.name.charAt(0) }}
+        </div>
+        <span class="text-sm truncate text-gray-700">{{ user.name }}</span>
+      </div>
+      <div v-if="filteredUsers.length === 0" class="p-2 text-xs text-gray-400 text-center">
+        无匹配用户
+      </div>
+    </div>
+
     <div class="flex-1 flex flex-col gap-2">
       <!-- Reply Preview -->
       <div v-if="replyingTo" class="flex items-center gap-2 bg-gray-50 p-2 rounded-clay text-sm text-gray-600 border-l-4 border-primary shadow-inner">
@@ -372,12 +390,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
-import { useChat } from '../composables/useChat';
+import { useChat, type User } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, createDiceGame, replyingTo, setReplyTo } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, createDiceGame, replyingTo, setReplyTo, state } = useChat();
 
 const isFireworksCoolingDown = ref(false);
 const isDiceCoolingDown = ref(false);
@@ -405,11 +423,48 @@ const handleSendFireworks = () => {
 };
 
 const emit = defineEmits<{
-  (e: 'send', text: string, image: string | null): void;
+  (e: 'send', text: string, image: string | null, mentions: string[]): void;
 }>();
 
 const text = ref('');
 const showEmojiPicker = ref(false);
+const showMentionList = ref(false);
+const mentionFilter = ref('');
+
+watch(text, (newText) => {
+  if (showMentionList.value) {
+    const match = newText.match(/@([^@\s]*)$/);
+    if (match) {
+      mentionFilter.value = match[1];
+    } else {
+      showMentionList.value = false;
+    }
+  } else {
+    // Check if user just typed @
+    const lastChar = newText.slice(-1);
+    if (lastChar === '@') {
+      showMentionList.value = true;
+      mentionFilter.value = '';
+    }
+  }
+});
+
+const filteredUsers = computed(() => {
+  if (!mentionFilter.value) return state.users;
+  return state.users.filter(u => u.name.toLowerCase().includes(mentionFilter.value.toLowerCase()));
+});
+
+const selectMention = (user: User) => {
+  const match = text.value.match(/@([^@\s]*)$/);
+  if (match) {
+    const index = match.index!;
+    text.value = text.value.slice(0, index) + `@${user.name} ` + text.value.slice(index + match[0].length);
+  } else {
+    text.value += user.name + ' ';
+  }
+  showMentionList.value = false;
+};
+
 const fileInput = ref<HTMLInputElement | null>(null);
 const imagePreview = ref<string | null>(null);
 
@@ -615,10 +670,18 @@ const handleEnter = (e: KeyboardEvent) => {
 
 const send = () => {
   if (text.value.trim() || imagePreview.value) {
-    emit('send', text.value.trim(), imagePreview.value);
+    const mentions: string[] = [];
+    state.users.forEach(user => {
+      if (text.value.includes(`@${user.name}`)) {
+        mentions.push(user.id);
+      }
+    });
+
+    emit('send', text.value.trim(), imagePreview.value, mentions);
     text.value = '';
     imagePreview.value = null;
     showEmojiPicker.value = false;
+    showMentionList.value = false;
   }
 };
 </script>

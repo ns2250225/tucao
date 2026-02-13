@@ -608,10 +608,11 @@ io.on('connection', (socket) => {
 
   // Handle new message
   socket.on('sendMessage', (payload) => {
-    // payload can be string (legacy) or object { text, image, quote }
+    // payload can be string (legacy) or object { text, image, quote, mentions }
     let text = '';
     let image = null;
     let quote = null;
+    let mentions = [];
 
     if (typeof payload === 'string') {
       text = payload;
@@ -619,6 +620,7 @@ io.on('connection', (socket) => {
       text = payload.text || '';
       image = payload.image || null;
       quote = payload.quote || null;
+      mentions = payload.mentions || [];
     }
 
     if (!text.trim() && !image) return;
@@ -628,6 +630,7 @@ io.on('connection', (socket) => {
       text: text,
       image: image,
       quote: quote,
+      mentions: mentions,
       senderId: socket.id,
       senderName: users[socket.id]?.name || '未知用户',
       timestamp: Date.now(),
