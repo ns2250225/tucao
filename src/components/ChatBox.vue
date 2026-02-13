@@ -400,30 +400,32 @@
   </Teleport>
 
   <!-- Context Menu -->
-  <div 
-    v-if="contextMenu.visible"
-    class="fixed z-[300] bg-white rounded-lg shadow-xl border border-gray-100 py-1 min-w-[120px]"
-    :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
-  >
+  <Teleport to="body">
     <div 
-      class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
-      @click="handleQuote"
+      v-if="contextMenu.visible"
+      class="fixed z-[9999] bg-white rounded-lg shadow-xl border border-gray-100 py-1 min-w-[120px]"
+      :style="{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-      </svg>
-      引用消息
+      <div 
+        class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
+        @click="handleQuote"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+        </svg>
+        引用消息
+      </div>
+      <div 
+        class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
+        @click="handleInitiateKick"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 2.197V17h10v-2.003A5.973 5.973 0 019 14zM21 12h-6" />
+        </svg>
+        <span class="text-red-500 font-bold">发起踢出</span>
+      </div>
     </div>
-    <div 
-      class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-gray-700 flex items-center gap-2"
-      @click="handleInitiateKick"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 2.197V17h10v-2.003A5.973 5.973 0 019 14zM21 12h-6" />
-      </svg>
-      <span class="text-red-500 font-bold">发起踢出</span>
-    </div>
-  </div>
+  </Teleport>
 
   <!-- Image Preview Modal -->
   <div v-if="previewImage" class="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out" @click="previewImage = null">
@@ -624,10 +626,13 @@ const contextMenu = ref({
 
 const handleContextMenu = (e: MouseEvent, msg: Message) => {
   e.preventDefault();
+  const target = e.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+
   contextMenu.value = {
     visible: true,
-    x: e.clientX,
-    y: e.clientY,
+    x: rect.right + 5,
+    y: rect.top,
     message: msg
   };
 };
