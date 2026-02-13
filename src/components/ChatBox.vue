@@ -500,6 +500,55 @@
       </div>
     </div>
   </Teleport>
+
+  <!-- Kick Password Modal -->
+  <Teleport to="body">
+    <div v-if="showKickPasswordModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-bounce-in">
+        <div class="bg-red-600 p-4 text-white flex justify-between items-center">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            管理员验证
+          </h3>
+          <button @click="closeKickPasswordModal" class="hover:bg-white/20 p-1 rounded-full transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-600">
+            发起踢出投票需要验证管理员权限。
+          </p>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">管理员密码</label>
+            <input 
+              v-model="kickPasswordInput" 
+              type="password" 
+              class="w-full border-2 border-gray-200 rounded-lg p-3 text-lg focus:border-red-500 focus:outline-none transition-colors"
+              placeholder="请输入密码" 
+              autofocus
+              @keyup.enter="submitKickPassword"
+            />
+            <div v-if="kickPasswordError" class="text-red-500 text-xs mt-1 font-bold">
+              {{ kickPasswordError }}
+            </div>
+          </div>
+
+          <button 
+            @click="submitKickPassword" 
+            class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all"
+          >
+            验证并发起
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
   
   <!-- New Message Tip -->
   <div 
@@ -558,6 +607,10 @@ const handleEscKey = (e: KeyboardEvent) => {
     }
     if (showDiceBetModal.value) {
       closeDiceBetModal();
+      return;
+    }
+    if (showKickPasswordModal.value) {
+      closeKickPasswordModal();
       return;
     }
     if (contextMenu.value.visible) {
@@ -652,6 +705,30 @@ const handleQuote = () => {
   closeContextMenu();
 };
 
+// Kick Password Logic
+const showKickPasswordModal = ref(false);
+const kickPasswordInput = ref('');
+const kickPasswordError = ref('');
+const pendingKickTargetId = ref<string | null>(null);
+
+const closeKickPasswordModal = () => {
+  showKickPasswordModal.value = false;
+  kickPasswordInput.value = '';
+  kickPasswordError.value = '';
+  pendingKickTargetId.value = null;
+};
+
+const submitKickPassword = () => {
+  if (kickPasswordInput.value === '1a2b3c4d') {
+    if (pendingKickTargetId.value) {
+      initiateKickVote(pendingKickTargetId.value);
+    }
+    closeKickPasswordModal();
+  } else {
+    kickPasswordError.value = '密码错误';
+  }
+};
+
 const handleInitiateKick = () => {
   if (contextMenu.value.message) {
     // Prevent kicking self or system
@@ -666,7 +743,9 @@ const handleInitiateKick = () => {
       return;
     }
     
-    initiateKickVote(contextMenu.value.message.senderId);
+    // Open password modal instead of direct kick
+    pendingKickTargetId.value = contextMenu.value.message.senderId;
+    showKickPasswordModal.value = true;
   }
   closeContextMenu();
 };
