@@ -1,6 +1,11 @@
 <template>
-  <div class="flex-1 overflow-y-auto p-2 md:p-6 space-y-4 bg-white/40 backdrop-blur-md rounded-clay-lg shadow-clay-inset custom-scrollbar" ref="chatContainer">
-    <TransitionGroup name="list" tag="div" class="space-y-4 pb-2">
+  <div class="flex-1 relative flex flex-col bg-white/40 backdrop-blur-md rounded-clay-lg shadow-clay-inset overflow-hidden">
+    <div 
+      class="flex-1 overflow-y-auto p-2 md:p-6 space-y-4 custom-scrollbar" 
+      ref="chatContainer"
+      @scroll="handleScroll"
+    >
+      <TransitionGroup name="list" tag="div" class="space-y-4 pb-2">
       <div 
         v-for="msg in messages" 
         :key="msg.id"
@@ -488,6 +493,21 @@
       </div>
     </div>
   </div>
+  
+  <!-- New Message Tip -->
+  <div 
+    v-if="showNewMessageTip" 
+    class="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 cursor-pointer animate-bounce"
+    @click="scrollToBottom('smooth')"
+  >
+    <div class="bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-600 transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      </svg>
+      <span>新消息</span>
+    </div>
+  </div>
+  </div>
 </template>
 
 
@@ -678,13 +698,53 @@ const hasVoted = (msg: Message) => {
       }
     });
 
-// Auto scroll to bottom
-watch(() => props.messages.length, () => {
-  nextTick(() => {
-    if (chatContainer.value) {
-      chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+// Scroll & New Message Logic
+const showNewMessageTip = ref(false);
+const isAtBottom = ref(true);
+
+const handleScroll = () => {
+  if (!chatContainer.value) return;
+  const { scrollTop, scrollHeight, clientHeight } = chatContainer.value;
+  // Use a small threshold (e.g. 50px) to determine if we are "at bottom"
+  isAtBottom.value = scrollHeight - scrollTop - clientHeight < 50;
+  
+  if (isAtBottom.value) {
+    showNewMessageTip.value = false;
+  }
+};
+
+const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+  if (chatContainer.value) {
+    chatContainer.value.scrollTo({
+      top: chatContainer.value.scrollHeight,
+      behavior
+    });
+    showNewMessageTip.value = false;
+  }
+};
+
+// Auto scroll to bottom logic
+watch(() => props.messages.length, async (newLen, oldLen) => {
+  await nextTick();
+  
+  // Initial load - scroll to bottom instantly
+  if (oldLen === 0) {
+    scrollToBottom('auto');
+    return;
+  }
+
+  if (newLen > oldLen) {
+    const lastMsg = props.messages[newLen - 1];
+    
+    // If I sent the message, scroll to bottom
+    if (lastMsg.senderId === props.currentUserId) {
+      scrollToBottom();
+    } else {
+      // For others' messages, show tip instead of auto-scrolling
+      // regardless of whether we are at bottom or not (per user request to not auto-scroll)
+      showNewMessageTip.value = true;
     }
-  });
+  }
 });
 </script>
 
