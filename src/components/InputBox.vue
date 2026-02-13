@@ -8,9 +8,10 @@
     <!-- User Mention List -->
     <div v-if="showMentionList" class="absolute bottom-full left-0 mb-2 z-50 shadow-clay rounded-clay overflow-hidden bg-white w-48 max-h-48 overflow-y-auto custom-scrollbar">
       <div 
-        v-for="user in filteredUsers" 
+        v-for="(user, index) in filteredUsers" 
         :key="user.id" 
-        class="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2 border-b border-gray-50 last:border-0"
+        class="p-2 cursor-pointer flex items-center gap-2 border-b border-gray-50 last:border-0"
+        :class="{ 'bg-gray-100': index === selectedIndex, 'hover:bg-gray-100': index !== selectedIndex }"
         @click="selectMention(user)"
       >
         <div class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary shrink-0">
@@ -40,6 +41,7 @@
       <div class="relative">
         <textarea
           v-model="text"
+          @keydown="handleKeyDown"
           @keydown.enter.prevent="handleEnter"
           placeholder="在此输入你的槽点... (回车发送)"
           class="w-full clay-input resize-none h-16 md:h-24 custom-scrollbar font-sans"
@@ -430,12 +432,14 @@ const text = ref('');
 const showEmojiPicker = ref(false);
 const showMentionList = ref(false);
 const mentionFilter = ref('');
+const selectedIndex = ref(0);
 
 watch(text, (newText) => {
   if (showMentionList.value) {
     const match = newText.match(/@([^@\s]*)$/);
     if (match) {
       mentionFilter.value = match[1] || '';
+      selectedIndex.value = 0;
     } else {
       showMentionList.value = false;
     }
@@ -445,6 +449,7 @@ watch(text, (newText) => {
     if (lastChar === '@') {
       showMentionList.value = true;
       mentionFilter.value = '';
+      selectedIndex.value = 0;
     }
   }
 });
@@ -693,7 +698,23 @@ const clearImage = () => {
   imagePreview.value = null;
 };
 
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (showMentionList.value && filteredUsers.value.length > 0) {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex.value = (selectedIndex.value - 1 + filteredUsers.value.length) % filteredUsers.value.length;
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex.value = (selectedIndex.value + 1) % filteredUsers.value.length;
+    }
+  }
+};
+
 const handleEnter = (e: KeyboardEvent) => {
+  if (showMentionList.value && filteredUsers.value.length > 0) {
+    selectMention(filteredUsers.value[selectedIndex.value]);
+    return;
+  }
   if (!e.shiftKey) {
     send();
   }
