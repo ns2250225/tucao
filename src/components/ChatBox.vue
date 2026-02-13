@@ -590,7 +590,7 @@ const props = defineProps<{
   currentUserId?: string;
 }>();
 
-const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame, initiateKickVote, adminKick, voteKick } = useChat();
+const { grabRedPacket, joinLottery, votePoll, lastGrabResult, sendCheers, setReplyTo, joinDiceGame, adminKick, voteKick } = useChat();
 const chatContainer = ref<HTMLElement | null>(null);
 const previewImage = ref<string | null>(null);
 
