@@ -428,74 +428,78 @@
   </Teleport>
 
   <!-- Image Preview Modal -->
-  <div v-if="previewImage" class="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out" @click="previewImage = null">
-    <div class="relative max-w-full max-h-full">
-      <img :src="previewImage" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" @click.stop />
-      <button @click="previewImage = null" class="absolute -top-12 right-0 text-white/70 hover:text-white p-2 bg-white/10 rounded-full transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- Dice Bet Modal -->
-  <div v-if="showDiceBetModal" class="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-bounce-in">
-      <div class="bg-green-600 p-4 text-white flex justify-between items-center">
-        <h3 class="font-bold text-lg flex items-center gap-2">
-          <span class="text-2xl">🎲</span>
-          参与下注
-        </h3>
-        <button @click="closeDiceBetModal" class="hover:bg-white/20 p-1 rounded-full transition-colors">
+  <Teleport to="body">
+    <div v-if="previewImage" class="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out" @click="previewImage = null">
+      <div class="relative max-w-full max-h-full">
+        <img :src="previewImage" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" @click.stop />
+        <button @click="previewImage = null" class="absolute -top-12 right-0 text-white/70 hover:text-white p-2 bg-white/10 rounded-full transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      
-      <div class="p-6 space-y-4">
-        <div class="text-center">
-          <div class="text-gray-500 text-sm mb-1">您选择下注</div>
-          <div class="text-2xl font-bold" :class="{
-            'text-red-500': selectedBetType === 'big',
-            'text-blue-500': selectedBetType === 'small',
-            'text-yellow-500': selectedBetType === 'leopard'
-          }">
-            {{ getBetLabel(selectedBetType) }}
-          </div>
-          <div class="text-xs text-gray-400 mt-1">
-            赔率: {{ selectedBetType === 'leopard' ? '1:24' : '1:1' }}
-          </div>
-        </div>
+    </div>
+  </Teleport>
 
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">下注金额</label>
-          <div class="relative">
-            <input 
-              v-model.number="betAmount" 
-              type="number" 
-              min="1" 
-              step="1" 
-              class="w-full border-2 border-gray-200 rounded-lg p-3 pr-10 text-lg font-bold text-center focus:border-green-500 focus:outline-none transition-colors"
-              placeholder="0" 
-              autofocus
-              @keyup.enter="confirmBet"
-            />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">元</span>
-          </div>
+  <!-- Dice Bet Modal -->
+  <Teleport to="body">
+    <div v-if="showDiceBetModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-bounce-in">
+        <div class="bg-green-600 p-4 text-white flex justify-between items-center">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <span class="text-2xl">🎲</span>
+            参与下注
+          </h3>
+          <button @click="closeDiceBetModal" class="hover:bg-white/20 p-1 rounded-full transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
+        
+        <div class="p-6 space-y-4">
+          <div class="text-center">
+            <div class="text-gray-500 text-sm mb-1">您选择下注</div>
+            <div class="text-2xl font-bold" :class="{
+              'text-red-500': selectedBetType === 'big',
+              'text-blue-500': selectedBetType === 'small',
+              'text-yellow-500': selectedBetType === 'leopard'
+            }">
+              {{ getBetLabel(selectedBetType) }}
+            </div>
+            <div class="text-xs text-gray-400 mt-1">
+              赔率: {{ selectedBetType === 'leopard' ? '1:24' : '1:1' }}
+            </div>
+          </div>
 
-        <button 
-          @click="confirmBet" 
-          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!betAmount || betAmount <= 0"
-        >
-          确认下注
-        </button>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">下注金额</label>
+            <div class="relative">
+              <input 
+                v-model.number="betAmount" 
+                type="number" 
+                min="1" 
+                step="1" 
+                class="w-full border-2 border-gray-200 rounded-lg p-3 pr-10 text-lg font-bold text-center focus:border-green-500 focus:outline-none transition-colors"
+                placeholder="0" 
+                autofocus
+                @keyup.enter="confirmBet"
+              />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">元</span>
+            </div>
+          </div>
+
+          <button 
+            @click="confirmBet" 
+            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!betAmount || betAmount <= 0"
+          >
+            确认下注
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
   
   <!-- New Message Tip -->
   <div 
