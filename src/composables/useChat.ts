@@ -231,6 +231,10 @@ export function initChat() {
         msg.kickVoteData = data.kickVoteData;
       }
     });
+
+    socket.on('clearUserMessages', (userId: string) => {
+      state.messages = state.messages.filter(m => m.senderId !== userId);
+    });
   });
 
   onUnmounted(() => {
@@ -250,6 +254,7 @@ export function initChat() {
     socket.off('pollUpdated');
     socket.off('diceGameUpdated');
     socket.off('kickVoteUpdated');
+    socket.off('clearUserMessages');
   });
 }
 
