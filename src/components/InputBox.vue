@@ -134,6 +134,16 @@
           </svg>
         </button>
 
+        <button 
+          @click="showSongRequestModal = true"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-pink-500 transition-colors"
+          title="发布点歌活动"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </button>
+
         <input 
           type="file" 
           ref="fileInput" 
@@ -389,6 +399,38 @@
       </div>
     </div>
   </div>
+
+  <!-- Song Request Modal -->
+  <div v-if="showSongRequestModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border-2 border-pink-200">
+      <div class="bg-pink-500 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+          </svg>
+          发布点歌活动
+        </h3>
+        <button @click="showSongRequestModal = false" class="hover:bg-pink-600 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">歌曲名称</label>
+          <input v-model="songName" @keydown.enter="handlePublishSongRequest" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-pink-500 focus:outline-none transition-colors" placeholder="输入歌曲名 (如: 七里香)" />
+        </div>
+        <button 
+          @click="handlePublishSongRequest" 
+          class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!songName.trim() || isSearchingSong"
+        >
+          {{ isSearchingSong ? '搜索中...' : '发布点歌活动' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -397,7 +439,7 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat, type User } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, createDiceGame, replyingTo, setReplyTo, state } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, createDiceGame, sendMusic, replyingTo, setReplyTo, state } = useChat();
 
 const isFireworksCoolingDown = ref(false);
 const isDiceCoolingDown = ref(false);
@@ -737,6 +779,36 @@ const send = () => {
     imagePreview.value = null;
     showEmojiPicker.value = false;
     showMentionList.value = false;
+  }
+};
+
+// Song Request Logic
+const showSongRequestModal = ref(false);
+const songName = ref('');
+const isSearchingSong = ref(false);
+const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
+
+const handlePublishSongRequest = async () => {
+  if (!songName.value.trim()) return;
+  
+  isSearchingSong.value = true;
+  try {
+    const res = await fetch(`${API_URL}/api/music/search?q=${encodeURIComponent(songName.value)}`);
+    const data = await res.json();
+    
+    if (!res.ok) {
+      alert(data.error || '搜索失败');
+      return;
+    }
+    
+    sendMusic(data);
+    showSongRequestModal.value = false;
+    songName.value = '';
+  } catch (e) {
+    console.error(e);
+    alert('搜索出错，请稍后重试');
+  } finally {
+    isSearchingSong.value = false;
   }
 };
 </script>

@@ -3,9 +3,55 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { fakerZH_CN as faker } from '@faker-js/faker';
+import Meting from '@meting/core';
 
 const app = express();
 app.use(cors());
+
+app.get('/api/music/search', async (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return res.status(400).json({ error: 'Missing query parameter q' });
+  }
+  try {
+    const meting = new Meting('netease');
+    meting.format(true);
+    const searchResult = await meting.search(q, { page: 1, limit: 1 });
+    const songs = JSON.parse(searchResult);
+    
+    if (!songs || songs.length === 0) {
+      return res.status(404).json({ error: 'No songs found' });
+    }
+
+    const song = songs[0];
+    
+    // Get URL
+    const urlInfoStr = await meting.url(song.url_id);
+    const urlInfo = JSON.parse(urlInfoStr);
+
+    if (!urlInfo.url) {
+       return res.status(404).json({ error: 'Song URL not found (possibly copyright restricted)' });
+    }
+
+    // Get Cover
+    const picInfoStr = await meting.pic(song.pic_id);
+    const picInfo = JSON.parse(picInfoStr);
+
+    res.json({
+      id: song.id,
+      name: song.name,
+      artist: song.artist.join(', '),
+      album: song.album,
+      url: urlInfo.url,
+      cover: picInfo.url,
+      source: song.source
+    });
+
+  } catch (error) {
+    console.error('Music search error:', error);
+    res.status(500).json({ error: 'Failed to search music' });
+  }
+});
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -620,6 +666,25 @@ io.on('connection', (socket) => {
   socket.on('sendFireworks', () => {
     // Broadcast fireworks to all clients
     io.emit('fireworks');
+  });
+
+  // Handle send Music
+  socket.on('sendMusic', (payload) => {
+    const { musicData, text } = payload;
+    if (!musicData) return;
+
+    const message = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      text: text || `分享了歌曲: ${musicData.name}`,
+      senderId: socket.id,
+      senderName: users[socket.id]?.name || '未知用户',
+      timestamp: Date.now(),
+      type: 'music',
+      musicData: musicData
+    };
+    
+    messages.push(message);
+    io.emit('newMessage', message);
   });
 
   // Handle new message

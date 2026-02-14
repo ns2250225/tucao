@@ -199,6 +199,48 @@
             </div>
           </div>
 
+          <!-- Music Message -->
+          <div v-else-if="msg.type === 'music'" class="w-full max-w-sm">
+            <div class="bg-gradient-to-br from-pink-500 to-purple-600 text-white rounded-t-clay overflow-hidden shadow-clay-lg">
+              <!-- Header -->
+              <div class="p-3 flex items-center gap-3 border-b border-white/10">
+                <div class="bg-white/20 p-2 rounded-full backdrop-blur-sm shadow-inner">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="font-bold text-sm">点歌分享</div>
+                  <div class="text-xs opacity-80">{{ msg.senderName }} 分享了一首歌曲</div>
+                </div>
+              </div>
+              
+              <!-- Content -->
+              <div class="p-4 flex gap-4 items-center">
+                <!-- Cover -->
+                <div class="w-20 h-20 rounded-lg overflow-hidden shadow-lg shrink-0 border-2 border-white/20 relative group bg-black/20">
+                  <img :src="msg.musicData?.cover" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                </div>
+                
+                <!-- Info -->
+                <div class="flex-1 min-w-0 flex flex-col justify-center">
+                  <div class="font-bold text-lg truncate mb-1 text-shadow-sm" :title="msg.musicData?.name">{{ msg.musicData?.name }}</div>
+                  <div class="text-xs opacity-90 truncate mb-2">{{ msg.musicData?.artist }} - {{ msg.musicData?.album }}</div>
+                </div>
+              </div>
+
+              <!-- Player -->
+              <div class="px-4 pb-4">
+                <audio controls class="w-full h-8 rounded-lg opacity-90 hover:opacity-100 transition-opacity shadow-sm" :src="msg.musicData?.url" controlsList="nodownload"></audio>
+              </div>
+            </div>
+            <div class="bg-white px-3 py-1 text-xs text-gray-500 rounded-b-clay border-t border-gray-100 shadow-clay-sm flex justify-between">
+               <span>来自 {{ msg.musicData?.source }}</span>
+               <span>有效期 30 分钟</span>
+            </div>
+          </div>
+
           <!-- Dice Game Message -->
           <div v-else-if="msg.type === 'diceGame'" class="w-full">
             <div class="bg-green-600 text-white p-3 rounded-t-clay shadow-clay-sm min-w-[200px] md:min-w-[240px] space-y-3">

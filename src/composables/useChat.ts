@@ -87,6 +87,16 @@ export interface KickVoteData {
   status: 'active' | 'success' | 'failed';
 }
 
+export interface MusicData {
+  id: string;
+  name: string;
+  artist: string;
+  album: string;
+  url: string;
+  cover: string;
+  source: string;
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -94,10 +104,11 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast' | 'diceGame' | 'kickVote';
+  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast' | 'diceGame' | 'kickVote' | 'music';
   redPacketId?: string;
   lotteryId?: string;
   lotteryData?: LotteryData;
+  musicData?: MusicData;
   pollId?: string;
   pollData?: PollData;
   toastId?: string;
@@ -351,6 +362,10 @@ export function useChat() {
     socket.emit('voteKick', { kickVoteId });
   };
 
+  const sendMusic = (musicData: MusicData, text?: string) => {
+    socket.emit('sendMusic', { musicData, text });
+  };
+
   // Filter messages older than 30 minutes
   const visibleMessages = computed(() => {
     const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
@@ -378,6 +393,7 @@ export function useChat() {
     initiateKickVote,
     adminKick,
     voteKick,
+    sendMusic,
     lastGrabResult,
     lastError,
     fireworksSignal,
