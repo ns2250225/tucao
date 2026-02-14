@@ -419,14 +419,48 @@
       <div class="p-6 space-y-4">
         <div>
           <label class="block text-sm font-bold text-gray-700 mb-1">歌曲名称</label>
-          <input v-model="songName" @keydown.enter="handlePublishSongRequest" class="w-full border-2 border-gray-200 rounded-lg p-2 focus:border-pink-500 focus:outline-none transition-colors" placeholder="输入歌曲名 (如: 七里香)" />
+          <div class="flex gap-2">
+            <input v-model="songName" @keydown.enter="handleSearchSong" class="flex-1 border-2 border-gray-200 rounded-lg p-2 focus:border-pink-500 focus:outline-none transition-colors" placeholder="输入歌曲名 (如: 七里香)" />
+            <button 
+              @click="handleSearchSong" 
+              class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 rounded-lg font-bold transition-colors disabled:opacity-50"
+              :disabled="!songName.trim() || isSearchingSong"
+            >
+              {{ isSearchingSong ? '...' : '搜索' }}
+            </button>
+          </div>
         </div>
+
+        <!-- Search Results List -->
+        <div v-if="searchResults.length > 0" class="max-h-60 overflow-y-auto custom-scrollbar border-2 border-gray-100 rounded-lg">
+          <div 
+            v-for="song in searchResults" 
+            :key="song.id"
+            @click="selectedSong = song"
+            class="p-3 hover:bg-pink-50 cursor-pointer transition-colors border-b last:border-b-0 flex items-center justify-between"
+            :class="{'bg-pink-100': selectedSong?.id === song.id}"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-sm truncate">{{ song.name }}</div>
+              <div class="text-xs text-gray-500 truncate">{{ song.artist }} - {{ song.album }}</div>
+            </div>
+            <div v-if="selectedSong?.id === song.id" class="text-pink-500 shrink-0 ml-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="hasSearched && !isSearchingSong" class="text-center text-gray-500 text-sm py-4">
+          未找到相关歌曲
+        </div>
+
         <button 
           @click="handlePublishSongRequest" 
           class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!songName.trim() || isSearchingSong"
+          :disabled="!selectedSong || isResolvingSong"
         >
-          {{ isSearchingSong ? '搜索中...' : '发布点歌活动' }}
+          {{ isResolvingSong ? '获取资源中...' : '发布点歌活动' }}
         </button>
       </div>
     </div>
@@ -786,29 +820,80 @@ const send = () => {
 const showSongRequestModal = ref(false);
 const songName = ref('');
 const isSearchingSong = ref(false);
+const isResolvingSong = ref(false);
+const searchResults = ref<any[]>([]);
+const selectedSong = ref<any>(null);
+const hasSearched = ref(false);
+
 const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
 
-const handlePublishSongRequest = async () => {
+const handleSearchSong = async () => {
   if (!songName.value.trim()) return;
   
   isSearchingSong.value = true;
+  hasSearched.value = true;
+  searchResults.value = [];
+  selectedSong.value = null;
+  
   try {
     const res = await fetch(`${API_URL}/api/music/search?q=${encodeURIComponent(songName.value)}`);
     const data = await res.json();
     
     if (!res.ok) {
-      alert(data.error || '搜索失败');
+      if (res.status === 404) {
+         // Empty results
+         searchResults.value = [];
+      } else {
+         alert(data.error || '搜索失败');
+      }
       return;
     }
     
-    sendMusic(data);
-    showSongRequestModal.value = false;
-    songName.value = '';
+    if (Array.isArray(data)) {
+        searchResults.value = data;
+    } else {
+        searchResults.value = [data];
+    }
+    
   } catch (e) {
     console.error(e);
     alert('搜索出错，请稍后重试');
   } finally {
     isSearchingSong.value = false;
+  }
+};
+
+const handlePublishSongRequest = async () => {
+  if (!selectedSong.value) return;
+  
+  isResolvingSong.value = true;
+  try {
+     const res = await fetch(`${API_URL}/api/music/resolve`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ song: selectedSong.value })
+     });
+     const data = await res.json();
+
+     if (!res.ok) {
+        alert(data.error || '获取歌曲资源失败');
+        return;
+     }
+
+    sendMusic(data);
+    showSongRequestModal.value = false;
+    // Reset state
+    songName.value = '';
+    searchResults.value = [];
+    selectedSong.value = null;
+    hasSearched.value = false;
+  } catch (e) {
+    console.error(e);
+    alert('发布出错，请稍后重试');
+  } finally {
+    isResolvingSong.value = false;
   }
 };
 </script>

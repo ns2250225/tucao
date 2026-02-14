@@ -7,6 +7,7 @@ import Meting from '@meting/core';
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 app.get('/api/music/search', async (req, res) => {
   const { q } = req.query;
@@ -16,19 +17,47 @@ app.get('/api/music/search', async (req, res) => {
   try {
     const meting = new Meting('netease');
     meting.format(true);
-    const searchResult = await meting.search(q, { page: 1, limit: 1 });
+    // Search for 5 songs
+    const searchResult = await meting.search(q, { page: 1, limit: 5 });
     const songs = JSON.parse(searchResult);
     
     if (!songs || songs.length === 0) {
       return res.status(404).json({ error: 'No songs found' });
     }
 
-    const song = songs[0];
-    
+    // Return the list of songs with metadata needed for resolving
+    const results = songs.map(song => ({
+      id: song.id,
+      name: song.name,
+      artist: song.artist.join(', '),
+      album: song.album,
+      url_id: song.url_id,
+      pic_id: song.pic_id,
+      source: song.source
+    }));
+
+    res.json(results);
+
+  } catch (error) {
+    console.error('Music search error:', error);
+    res.status(500).json({ error: 'Failed to search music' });
+  }
+});
+
+app.post('/api/music/resolve', async (req, res) => {
+  const { song } = req.body;
+  if (!song) {
+    return res.status(400).json({ error: 'Missing song data' });
+  }
+
+  try {
+    const meting = new Meting('netease');
+    meting.format(true);
+
     // Get URL
     const urlInfoStr = await meting.url(song.url_id);
     const urlInfo = JSON.parse(urlInfoStr);
-
+    
     if (!urlInfo.url) {
        return res.status(404).json({ error: 'Song URL not found (possibly copyright restricted)' });
     }
@@ -40,7 +69,7 @@ app.get('/api/music/search', async (req, res) => {
     res.json({
       id: song.id,
       name: song.name,
-      artist: song.artist.join(', '),
+      artist: song.artist,
       album: song.album,
       url: urlInfo.url,
       cover: picInfo.url,
@@ -48,8 +77,8 @@ app.get('/api/music/search', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Music search error:', error);
-    res.status(500).json({ error: 'Failed to search music' });
+    console.error('Music resolve error:', error);
+    res.status(500).json({ error: 'Failed to resolve music' });
   }
 });
 
