@@ -143,12 +143,7 @@ if (cluster.isPrimary) {
   const pubClient = new Redis({ host: REDIS_HOST, port: REDIS_PORT });
   const subClient = pubClient.duplicate();
 
-  Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
-    io.adapter(createAdapter(pubClient, subClient));
-  }).catch(err => {
-      // ioredis connects automatically, but explicit connect() is fine for some versions/contexts
-      // If it fails, it usually logs.
-  });
+  io.adapter(createAdapter(pubClient, subClient));
 
   io.on('connection', async (socket) => {
     console.log(`Worker ${process.pid}: User connected: ${socket.id}`);

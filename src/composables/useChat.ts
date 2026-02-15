@@ -130,7 +130,7 @@ const SOCKET_URL = '';
 const socket: Socket = io(SOCKET_URL, {
   autoConnect: false,
   path: '/socket.io/',
-  transports: ['websocket', 'polling']
+  transports: ['websocket']
 });
 
 const state = reactive({
