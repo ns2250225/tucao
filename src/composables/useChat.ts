@@ -187,6 +187,7 @@ export function initChat() {
 
     socket.on('userLeft', (userId: string) => {
       state.users = state.users.filter(u => u.id !== userId);
+      state.messages = state.messages.filter(m => m.senderId !== userId);
     });
 
     socket.on('userUpdated', (updatedUser: User) => {

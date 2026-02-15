@@ -6,11 +6,27 @@
         <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white text-2xl font-bold shadow-md transform rotate-3">
           T
         </div>
-        <h1 class="text-2xl font-serif font-bold text-text-color tracking-tight">
+        <h1 class="hidden md:block text-2xl font-serif font-bold text-text-color tracking-tight">
           在线 <span class="text-primary">吐槽</span>
         </h1>
       </div>
       <div class="flex items-center gap-4">
+        <button 
+          @click="showContactModal = true"
+          class="hidden md:block px-4 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-full text-sm font-bold shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+        >
+          联系作者
+        </button>
+        <button 
+          @click="showContactModal = true"
+          class="md:hidden p-2 rounded-full hover:bg-secondary/20 text-blue-600 transition-colors"
+          title="联系作者"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+
         <!-- Mobile User List Toggle -->
         <button 
           @click="showMobileUserList = true"
@@ -87,6 +103,123 @@
     </div>
   </div>
 
+  <!-- Contact Author Modal -->
+  <Transition name="fade">
+    <div v-if="showContactModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showContactModal = false"></div>
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden transform transition-all scale-100">
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 flex justify-between items-center text-white">
+          <h3 class="text-xl font-bold flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            联系作者
+          </h3>
+          <button @click="showContactModal = false" class="hover:bg-white/20 p-1 rounded-full transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+          
+          <div class="space-y-2">
+            <p class="text-gray-600 font-bold text-sm uppercase tracking-wider">作者微信</p>
+            <div 
+              @click="copyText('ns2250225')" 
+              class="bg-gray-50 p-4 rounded-xl flex justify-between items-center cursor-pointer hover:bg-blue-50 hover:shadow-md transition-all group border border-gray-100"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-100 rounded-lg text-green-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <span class="font-mono text-gray-800 font-bold text-lg">ns2250225</span>
+              </div>
+              <span class="text-xs text-gray-400 group-hover:text-blue-500 font-medium">点击复制</span>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-gray-600 font-bold text-sm uppercase tracking-wider">本站域名</p>
+             <div 
+              @click="copyText('https://tucao.yyrun.top/')" 
+              class="bg-gray-50 p-4 rounded-xl flex justify-between items-center cursor-pointer hover:bg-blue-50 hover:shadow-md transition-all group border border-gray-100"
+            >
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <span class="font-mono text-gray-800 font-bold truncate">https://tucao.yyrun.top/</span>
+              </div>
+              <span class="text-xs text-gray-400 group-hover:text-blue-500 font-medium whitespace-nowrap ml-2">点击复制</span>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-2">
+            <p class="text-gray-600 font-bold text-sm uppercase tracking-wider border-t pt-4">作者其它网站</p>
+            <div class="grid gap-3">
+               <div 
+                  @click="copyText('https://www.resume.monster/')"
+                  class="bg-blue-50 p-3 rounded-xl hover:bg-blue-100 transition-colors border border-blue-100 cursor-pointer group"
+               >
+                  <div class="flex justify-between items-center mb-1">
+                      <span class="font-bold text-blue-800 flex items-center gap-2">
+                        <span>📄</span> 简历优化
+                      </span>
+                      <span class="text-xs text-blue-400 group-hover:text-blue-600">点击复制</span>
+                  </div>
+                  <div class="text-xs text-blue-600 font-mono truncate">https://www.resume.monster/</div>
+               </div>
+               
+                <div 
+                  @click="copyText('https://layman.xin/')"
+                  class="bg-purple-50 p-3 rounded-xl hover:bg-purple-100 transition-colors border border-purple-100 cursor-pointer group"
+               >
+                  <div class="flex justify-between items-center mb-1">
+                      <span class="font-bold text-purple-800 flex items-center gap-2">
+                        <span>🤪</span> 表情包生成平台
+                      </span>
+                      <span class="text-xs text-purple-400 group-hover:text-purple-600">点击复制</span>
+                  </div>
+                  <div class="text-xs text-purple-600 font-mono truncate">https://layman.xin/</div>
+               </div>
+
+               <div 
+                  @click="copyText('http://47.107.180.19:5173/')"
+                  class="bg-pink-50 p-3 rounded-xl hover:bg-pink-100 transition-colors border border-pink-100 cursor-pointer group"
+               >
+                  <div class="flex justify-between items-center mb-1">
+                      <span class="font-bold text-pink-800 flex items-center gap-2">
+                        <span>🎨</span> 漫画生成
+                      </span>
+                      <span class="text-xs text-pink-400 group-hover:text-pink-600">点击复制</span>
+                  </div>
+                  <div class="text-xs text-pink-600 font-mono truncate">http://47.107.180.19:5173/</div>
+               </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 p-3 text-center text-xs text-gray-400 border-t">
+          感谢您的支持与关注
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- Success Toast -->
+  <Transition name="fade">
+    <div v-if="showToast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[300] bg-green-500 text-white px-6 py-2 rounded-full shadow-lg font-bold flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+      </svg>
+      {{ toastMessage }}
+    </div>
+  </Transition>
+
   <!-- Global Error Toast -->
   <div v-if="lastError" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[200] bg-red-500 text-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 animate-bounce">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -137,12 +270,48 @@ initChat();
 const { state, visibleMessages, connect, sendMessage, updateName, lastError, fireworksSignal, cheersSignal } = useChat();
 
 const showMobileUserList = ref(false);
+const showContactModal = ref(false);
 const showFireworksText = ref(false);
+const showToast = ref(false);
+const toastMessage = ref('');
+
+const copyText = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toastMessage.value = '复制成功';
+    showToast.value = true;
+    setTimeout(() => {
+      showToast.value = false;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy:', err);
+    // Fallback for older browsers
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      toastMessage.value = '复制成功';
+      showToast.value = true;
+      setTimeout(() => {
+        showToast.value = false;
+      }, 2000);
+    } catch (err) {
+      console.error('Fallback: Oops, unable to copy', err);
+      alert('复制失败，请手动复制');
+    }
+    document.body.removeChild(textArea);
+  }
+};
 
 const handleEscKey = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     if (showMobileUserList.value) {
       showMobileUserList.value = false;
+    }
+    if (showContactModal.value) {
+      showContactModal.value = false;
     }
   }
 };
