@@ -868,6 +868,7 @@ if (cluster.isPrimary) {
     // Handle disconnect
     socket.on('disconnect', async () => {
       console.log(`Worker ${process.pid}: User disconnected: ${socket.id}`);
+      await state.removeMessagesByUserId(socket.id);
       await state.removeUser(socket.id);
       io.emit('userLeft', socket.id);
     });

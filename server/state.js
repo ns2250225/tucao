@@ -129,6 +129,32 @@ export const state = {
     const data = await redis.lrange(KEYS.MESSAGES, 0, -1);
     return data.map(JSON.parse);
   },
+
+  async removeMessagesByUserId(userId) {
+    const script = `
+      local key = KEYS[1]
+      local userId = ARGV[1]
+      local items = redis.call('LRANGE', key, 0, -1)
+      local newItems = {}
+      for i, item in ipairs(items) do
+        local decoded = cjson.decode(item)
+        if decoded.senderId ~= userId then
+          table.insert(newItems, item)
+        end
+      end
+      redis.call('DEL', key)
+      if #newItems > 0 then
+        for i, item in ipairs(newItems) do
+            redis.call('RPUSH', key, item)
+        end
+      end
+      return 0
+    `;
+    // Note: RPUSH with unpack might fail if too many arguments, so looping is safer for large lists, 
+    // or batching. Given max 500 items, unpack might be okay, but loop is safer.
+    
+    await redis.eval(script, 1, KEYS.MESSAGES, userId);
+  },
   
   async cleanupMessages(maxAgeMs) {
       // Cleanup is harder in Redis List without iterating. 
