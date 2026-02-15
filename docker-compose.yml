@@ -21,4 +21,17 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
     restart: always
+
+  redis:
+    image: redis:alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

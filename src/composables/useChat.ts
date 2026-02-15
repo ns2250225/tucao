@@ -247,6 +247,13 @@ export function initChat() {
       }
     });
 
+    socket.on('lotteryUpdated', (data: { lotteryId: string, lotteryData: LotteryData }) => {
+      const msg = state.messages.find(m => m.lotteryId === data.lotteryId);
+      if (msg) {
+        msg.lotteryData = data.lotteryData;
+      }
+    });
+
     socket.on('clearUserMessages', (userId: string) => {
       state.messages = state.messages.filter(m => m.senderId !== userId);
     });
@@ -269,6 +276,7 @@ export function initChat() {
     socket.off('pollUpdated');
     socket.off('diceGameUpdated');
     socket.off('kickVoteUpdated');
+    socket.off('lotteryUpdated');
     socket.off('clearUserMessages');
   });
 }
