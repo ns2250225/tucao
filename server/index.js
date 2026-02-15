@@ -169,6 +169,14 @@ if (cluster.isPrimary) {
     });
 
     // Broadcast new user
+    // Only broadcast to others if this user wasn't already in the list (though Redis addUser overwrites)
+    // But since we are stateless, we can't easily check "was already there" without extra lookup.
+    // However, the client list might have duplicates if we don't check.
+    // Frontend handles deduplication usually?
+    // Let's check frontend code.
+    // Frontend does: state.users.push(user)
+    // We should fix frontend to not push if exists.
+    
     socket.broadcast.emit('userJoined', userData);
 
     // Handle name change

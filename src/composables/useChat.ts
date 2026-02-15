@@ -180,7 +180,9 @@ export function initChat() {
     });
 
     socket.on('userJoined', (user: User) => {
-      state.users.push(user);
+      if (!state.users.find(u => u.id === user.id)) {
+        state.users.push(user);
+      }
     });
 
     socket.on('userLeft', (userId: string) => {
