@@ -825,7 +825,7 @@ const searchResults = ref<any[]>([]);
 const selectedSong = ref<any>(null);
 const hasSearched = ref(false);
 
-const API_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
+const API_URL = '';
 
 const handleSearchSong = async () => {
   if (!songName.value.trim()) return;

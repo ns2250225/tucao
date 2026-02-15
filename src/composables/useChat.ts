@@ -125,10 +125,12 @@ export interface Message {
   };
 }
 
-const SOCKET_URL = import.meta.env.PROD ? '' : 'http://localhost:3000';
+const SOCKET_URL = '';
 
 const socket: Socket = io(SOCKET_URL, {
-  autoConnect: false
+  autoConnect: false,
+  path: '/socket.io/',
+  transports: ['websocket', 'polling']
 });
 
 const state = reactive({
