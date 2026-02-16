@@ -144,6 +144,17 @@
           </svg>
         </button>
 
+        <button 
+          @click="showHotTopicModal = true"
+          class="p-1.5 rounded-full hover:bg-secondary/20 text-gray-500 hover:text-red-600 transition-colors"
+          title="发布热点吐槽"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+          </svg>
+        </button>
+
         <input 
           type="file" 
           ref="fileInput" 
@@ -256,7 +267,74 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span class="text-sm text-gray-500">点击上传奖品图片</span>
-            </template>
+              <!-- Hot Topic Modal -->
+  <div v-if="showHotTopicModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border-2 border-red-500">
+      <div class="bg-red-500 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
+          </svg>
+          发布热点吐槽
+        </h3>
+        <button @click="showHotTopicModal = false" class="hover:bg-red-600 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <button 
+          @click="fetchHotTopics" 
+          class="w-full bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 rounded-lg border border-red-200 transition-colors flex items-center justify-center gap-2"
+          :disabled="isLoadingHotTopics"
+        >
+          <svg v-if="isLoadingHotTopics" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ isLoadingHotTopics ? '获取中...' : '获取热点' }}</span>
+        </button>
+
+        <div v-if="hotTopics.length > 0" class="max-h-60 overflow-y-auto custom-scrollbar border-2 border-gray-100 rounded-lg">
+          <div 
+            v-for="topic in hotTopics" 
+            :key="topic.index"
+            @click="selectedHotTopic = topic"
+            class="p-3 hover:bg-red-50 cursor-pointer transition-colors border-b last:border-b-0 flex items-center justify-between"
+            :class="{'bg-red-100': selectedHotTopic?.index === topic.index}"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-sm truncate" :title="topic.title">
+                <span class="mr-2 text-red-500 font-mono">{{ topic.index }}</span>
+                {{ topic.title }}
+              </div>
+              <div class="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                <span class="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{{ topic.hot_value }}热度</span>
+              </div>
+            </div>
+            <div v-if="selectedHotTopic?.index === topic.index" class="text-red-500 shrink-0 ml-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="!isLoadingHotTopics && hasFetchedHotTopics" class="text-center text-gray-500 text-sm py-4">
+          暂无热点数据
+        </div>
+
+        <button 
+          @click="handlePublishHotTopicRant" 
+          class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!selectedHotTopic"
+        >
+          发布热点吐槽
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
             <img v-else :src="lotteryImagePreview" class="absolute inset-0 w-full h-full object-cover" />
             <input 
               type="file" 
@@ -461,6 +539,73 @@
           :disabled="!selectedSong || isResolvingSong"
         >
           {{ isResolvingSong ? '获取资源中...' : '发布点歌活动' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Hot Topic Modal -->
+  <div v-if="showHotTopicModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border-2 border-red-500">
+      <div class="bg-red-500 p-4 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
+          </svg>
+          发布热点吐槽
+        </h3>
+        <button @click="showHotTopicModal = false" class="hover:bg-red-600 p-1 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <button 
+          @click="fetchHotTopics" 
+          class="w-full bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 rounded-lg border border-red-200 transition-colors flex items-center justify-center gap-2"
+          :disabled="isLoadingHotTopics"
+        >
+          <svg v-if="isLoadingHotTopics" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ isLoadingHotTopics ? '获取中...' : '获取热点' }}</span>
+        </button>
+
+        <div v-if="hotTopics.length > 0" class="max-h-60 overflow-y-auto custom-scrollbar border-2 border-gray-100 rounded-lg">
+          <div 
+            v-for="topic in hotTopics" 
+            :key="topic.index"
+            @click="selectedHotTopic = topic"
+            class="p-3 hover:bg-red-50 cursor-pointer transition-colors border-b last:border-b-0 flex items-center justify-between"
+            :class="{'bg-red-100': selectedHotTopic?.index === topic.index}"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-sm truncate" :title="topic.title">
+                <span class="mr-2 text-red-500 font-mono">{{ topic.index }}</span>
+                {{ topic.title }}
+              </div>
+              <div class="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                <span class="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">{{ topic.hot_value }}热度</span>
+              </div>
+            </div>
+            <div v-if="selectedHotTopic?.index === topic.index" class="text-red-500 shrink-0 ml-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="!isLoadingHotTopics && hasFetchedHotTopics" class="text-center text-gray-500 text-sm py-4">
+          暂无热点数据
+        </div>
+
+        <button 
+          @click="handlePublishHotTopicRant" 
+          class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!selectedHotTopic"
+        >
+          发布热点吐槽
         </button>
       </div>
     </div>
@@ -719,6 +864,10 @@ const handleEscKey = (e: KeyboardEvent) => {
       showRedPacketModal.value = false;
       return;
     }
+    if (showHotTopicModal.value) {
+      showHotTopicModal.value = false;
+      return;
+    }
     if (showLotteryModal.value) {
       showLotteryModal.value = false;
       return;
@@ -895,6 +1044,48 @@ const handlePublishSongRequest = async () => {
   } finally {
     isResolvingSong.value = false;
   }
+};
+
+// Hot Topic Logic
+const showHotTopicModal = ref(false);
+const hotTopics = ref<any[]>([]);
+const selectedHotTopic = ref<any>(null);
+const isLoadingHotTopics = ref(false);
+const hasFetchedHotTopics = ref(false);
+
+const fetchHotTopics = async () => {
+  isLoadingHotTopics.value = true;
+  hasFetchedHotTopics.value = true;
+  hotTopics.value = [];
+  selectedHotTopic.value = null;
+  
+  try {
+    const res = await fetch('https://uapis.cn/api/v1/misc/hotboard?type=weibo');
+    const data = await res.json();
+    
+    if (data && data.list) {
+      hotTopics.value = data.list;
+    } else {
+      alert('获取热点失败');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('获取热点出错，请稍后重试');
+  } finally {
+    isLoadingHotTopics.value = false;
+  }
+};
+
+const handlePublishHotTopicRant = () => {
+  if (!selectedHotTopic.value) return;
+  
+  const topic = selectedHotTopic.value;
+  const message = `【今日热点】${topic.title}\n热度：${topic.hot_value}\n链接：${topic.url}\n\n对于这个热点你怎么看？请讨论一下。`;
+  
+  emit('send', message, null, []);
+  
+  showHotTopicModal.value = false;
+  selectedHotTopic.value = null;
 };
 </script>
 

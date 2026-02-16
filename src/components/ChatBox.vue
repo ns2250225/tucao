@@ -365,6 +365,39 @@
             </div>
           </div>
 
+          <!-- Hot Topic Message -->
+          <div v-else-if="isHotTopic(msg)" class="w-full max-w-sm">
+            <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-t-clay shadow-clay-sm">
+              <div class="flex items-center gap-2 mb-2 border-b border-white/20 pb-2">
+                <div class="bg-white/20 p-1.5 rounded-full shadow-inner">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <span class="font-bold text-sm opacity-90">今日热点</span>
+              </div>
+              <h3 class="text-lg font-bold leading-tight mb-2 text-shadow-sm">{{ getHotTopicData(msg)?.title }}</h3>
+              <div class="flex items-center gap-2 text-xs opacity-90 bg-black/10 inline-block px-2 py-1 rounded-full">
+                <span>🔥 {{ getHotTopicData(msg)?.hotValue }} 热度</span>
+              </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-b-clay border-t border-gray-100 shadow-clay-sm space-y-4">
+              <div class="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">{{ getHotTopicData(msg)?.comment }}</div>
+              
+              <a 
+                :href="getHotTopicData(msg)?.link" 
+                target="_blank" 
+                class="block w-full text-center bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 rounded-lg transition-all border border-red-200 shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 group/link"
+              >
+                <span>查看详情</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover/link:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
           <div v-else-if="msg.text" class="text-base break-all whitespace-pre-wrap font-sans leading-relaxed" v-html="formatText(msg)"></div>
           <div class="text-[10px] opacity-50 mt-2 text-right font-mono">
             {{ formatTime(msg.timestamp) }}
@@ -879,6 +912,39 @@ const showNewMessageTip = ref(false);
 const showMentionTip = ref(false);
 const lastMentionedMessageId = ref<string | null>(null);
 const isAtBottom = ref(true);
+
+const isHotTopic = (msg: Message) => {
+  return msg.text && msg.text.startsWith('【今日热点】') && msg.text.includes('链接：');
+};
+
+const getHotTopicData = (msg: Message) => {
+  if (!msg.text || !msg.text.startsWith('【今日热点】')) return null;
+  
+  const lines = msg.text.split('\n');
+  let title = '';
+  let hotValue = '';
+  let link = '';
+  let comment = '';
+  
+  if (lines.length >= 1) {
+    title = lines[0]!.replace('【今日热点】', '').trim();
+  }
+  
+  const linkIndex = lines.findIndex(l => l.trim().startsWith('链接：'));
+  if (linkIndex !== -1) {
+     link = lines[linkIndex]!.replace('链接：', '').trim();
+     comment = lines.slice(linkIndex + 1).join('\n').trim();
+  }
+  
+  const hotIndex = lines.findIndex(l => l.trim().startsWith('热度：'));
+  if (hotIndex !== -1) {
+     hotValue = lines[hotIndex]!.replace('热度：', '').trim();
+  }
+
+  if (!title || !link) return null;
+  
+  return { title, hotValue, link, comment };
+};
 
 const formatText = (msg: Message) => {
   if (!msg.text) return '';
