@@ -130,6 +130,94 @@ export const state = {
     return data.map(JSON.parse);
   },
 
+  async getEnrichedMessages() {
+    const messages = await this.getMessages();
+    const enrichedMessages = [...messages];
+
+    // Collect IDs for each type
+    const diceGameIds = [];
+    const pollIds = [];
+    const lotteryIds = [];
+    const kickVoteIds = [];
+
+    enrichedMessages.forEach((msg, index) => {
+      if (msg.type === 'diceGame' && msg.diceGameId) {
+        diceGameIds.push({ index, id: msg.diceGameId });
+      } else if (msg.type === 'poll' && msg.pollId) {
+        pollIds.push({ index, id: msg.pollId });
+      } else if (msg.type === 'lottery' && msg.lotteryId) {
+        lotteryIds.push({ index, id: msg.lotteryId });
+      } else if (msg.type === 'kickVote' && msg.kickVoteId) {
+        kickVoteIds.push({ index, id: msg.kickVoteId });
+      }
+    });
+
+    // Helper to fetch and update
+    const updateEntities = async (ids, key, dataProp) => {
+      if (ids.length === 0) return;
+      // Use pipeline to fetch all entities efficiently
+      const pipeline = redis.pipeline();
+      ids.forEach(({ id }) => pipeline.hget(key, id));
+      const results = await pipeline.exec();
+
+      results.forEach((result, i) => {
+        const [err, data] = result;
+        if (!err && data) {
+          try {
+            const entity = JSON.parse(data);
+            const { index } = ids[i];
+            const msg = enrichedMessages[index];
+
+            // Update message data with latest entity data
+            if (dataProp === 'diceGameData') {
+              msg[dataProp] = {
+                participants: entity.participants,
+                status: entity.status,
+                result: entity.result
+              };
+            } else if (dataProp === 'pollData') {
+               msg[dataProp] = {
+                title: entity.title,
+                options: entity.options,
+                totalVotes: Object.keys(entity.voters || {}).length,
+                voters: Object.keys(entity.voters || {})
+              };
+            } else if (dataProp === 'lotteryData') {
+               msg[dataProp] = {
+                prizeImage: entity.prizeImage,
+                maxParticipants: entity.maxParticipants,
+                currentParticipants: entity.participants.length,
+                status: entity.status,
+                winnerName: entity.winnerName,
+                winnerId: entity.winnerId,
+                contactInfo: entity.status === 'finished' ? entity.contactInfo : null
+              };
+            } else if (dataProp === 'kickVoteData') {
+               msg[dataProp] = {
+                targetUserId: entity.targetUserId,
+                targetUserName: entity.targetUserName,
+                votes: entity.votes,
+                requiredVotes: entity.requiredVotes,
+                status: entity.status
+              };
+            }
+          } catch (e) {
+            console.error('Error parsing entity data:', e);
+          }
+        }
+      });
+    };
+
+    await Promise.all([
+      updateEntities(diceGameIds, KEYS.DICEGAMES, 'diceGameData'),
+      updateEntities(pollIds, KEYS.POLLS, 'pollData'),
+      updateEntities(lotteryIds, KEYS.LOTTERIES, 'lotteryData'),
+      updateEntities(kickVoteIds, KEYS.KICKVOTES, 'kickVoteData')
+    ]);
+
+    return enrichedMessages;
+  },
+
   async removeMessagesByUserId(userId) {
     const script = `
       local key = KEYS[1]

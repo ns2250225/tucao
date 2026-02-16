@@ -137,7 +137,8 @@ const state = reactive({
   users: [] as User[],
   messages: [] as Message[],
   currentUser: null as User | null,
-  isConnected: false
+  isConnected: false,
+  disconnectReason: null as string | null
 });
 
 // Event-related reactive state
@@ -161,6 +162,7 @@ export function initChat() {
 
     socket.on('connect', () => {
       state.isConnected = true;
+      state.disconnectReason = null;
       const savedName = localStorage.getItem('chat_username');
       if (savedName) {
         socket.emit('updateName', savedName);
@@ -168,6 +170,11 @@ export function initChat() {
     });
 
     socket.on('disconnect', () => {
+      state.isConnected = false;
+    });
+
+    socket.on('kicked', (reason: string) => {
+      state.disconnectReason = reason;
       state.isConnected = false;
     });
 
@@ -283,6 +290,7 @@ export function initChat() {
     socket.off('kickVoteUpdated');
     socket.off('lotteryUpdated');
     socket.off('clearUserMessages');
+    socket.off('kicked');
   });
 }
 

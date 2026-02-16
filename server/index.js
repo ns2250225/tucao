@@ -145,8 +145,30 @@ if (cluster.isPrimary) {
 
   io.adapter(createAdapter(pubClient, subClient));
 
+  // Inactivity timeout (10 minutes)
+  const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
+
+  // Cleanup inactive sockets
+  setInterval(() => {
+    const now = Date.now();
+    // io.sockets.sockets is a Map <socketId, Socket>
+    io.sockets.sockets.forEach((socket) => {
+      if (socket.lastActivity && (now - socket.lastActivity > INACTIVITY_TIMEOUT)) {
+        socket.emit('kicked', '由于长时间未说话或发起活动，连接已自动断开');
+        socket.disconnect(true);
+        console.log(`Worker ${process.pid}: User ${socket.id} disconnected due to inactivity`);
+      }
+    });
+  }, 60 * 1000); // Check every minute
+
   io.on('connection', async (socket) => {
     console.log(`Worker ${process.pid}: User connected: ${socket.id}`);
+
+    // Track activity
+    socket.lastActivity = Date.now();
+    socket.onAny(() => {
+      socket.lastActivity = Date.now();
+    });
 
     // Default user setup
     const userData = {
@@ -161,7 +183,8 @@ if (cluster.isPrimary) {
     // Send initial state
     // Note: In high concurrency, getting ALL users might be heavy, but for this app it's required
     const allUsers = await state.getAllUsers();
-    const messages = await state.getMessages();
+    // Use enriched messages to ensure new users see the latest state of activities (diceGame, poll, etc.)
+    const messages = await state.getEnrichedMessages();
     
     socket.emit('init', {
       users: allUsers,
