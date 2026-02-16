@@ -1,5 +1,5 @@
 <template>
-  <Home v-if="!hasStarted" @start="onStart" />
+  <Home v-if="!canShowChat" @start="onStart" />
   
   <div v-else class="h-[100dvh] w-full bg-background flex flex-col overflow-hidden">
     <!-- Header -->
@@ -281,7 +281,7 @@
   </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch, ref } from 'vue';
+import { onMounted, onUnmounted, watch, ref, computed } from 'vue';
 import { useChat, initChat } from './composables/useChat';
 import ChatBox from './components/ChatBox.vue';
 import UserList from './components/UserList.vue';
@@ -300,6 +300,9 @@ const showContactModal = ref(false);
 const showFireworksText = ref(false);
 const showToast = ref(false);
 const toastMessage = ref('');
+
+// Ensure we only show chat interface if user has explicitly started from Home
+const canShowChat = computed(() => hasStarted.value);
 
 const onStart = () => {
   hasStarted.value = true;

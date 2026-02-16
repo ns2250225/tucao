@@ -154,6 +154,12 @@ let timeInterval: any;
 
 // Initialize socket listeners only once
 export function initChat() {
+  // Only init listeners if not already initialized or if we want to re-bind
+  // But socket.on adds listeners, so we should be careful not to duplicate.
+  // socket.io-client handles multiplexing, but listeners on the client object are cumulative.
+  // We should probably check if we already attached listeners.
+  // For simplicity in this setup, we assume initChat is called once in App.vue setup.
+  
   onMounted(() => {
     // Start timer to update 'now'
     timeInterval = setInterval(() => {

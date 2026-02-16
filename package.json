@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "server": "nodemon server/index.js",
+    "reset": "node -e \"const Redis=require('ioredis');const redis=new Redis({host:process.env.REDIS_HOST||'localhost',port:6379});redis.flushdb().then(()=>{console.log('Database cleared');process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})\"",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },

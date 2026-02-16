@@ -33,6 +33,18 @@ if (cluster.isPrimary) {
   // Cleanup routine: remove messages/entities older than 30 minutes
   const MESSAGE_LIFETIME = 30 * 60 * 1000; // 30 minutes in ms
 
+  // On primary startup, flush Redis DB
+  (async () => {
+    try {
+      const redis = new Redis({ host: REDIS_HOST, port: REDIS_PORT });
+      await redis.flushdb();
+      console.log('Primary: Redis database flushed.');
+      redis.disconnect();
+    } catch (err) {
+      console.error('Primary: Failed to flush Redis:', err);
+    }
+  })();
+
   setInterval(async () => {
     try {
       // Cleanup messages handled by trimming in addMessage, 
