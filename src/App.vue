@@ -1,5 +1,7 @@
 <template>
-  <div class="h-[100dvh] w-full bg-background flex flex-col overflow-hidden">
+  <Home v-if="!hasStarted" @start="onStart" />
+  
+  <div v-else class="h-[100dvh] w-full bg-background flex flex-col overflow-hidden">
     <!-- Header -->
     <header class="h-16 bg-white border-b-2 border-secondary flex items-center justify-between px-6 shadow-sm z-10 shrink-0">
       <div class="flex items-center gap-3">
@@ -284,6 +286,7 @@ import { useChat, initChat } from './composables/useChat';
 import ChatBox from './components/ChatBox.vue';
 import UserList from './components/UserList.vue';
 import InputBox from './components/InputBox.vue';
+import Home from './components/Home.vue';
 import confetti from 'canvas-confetti';
 
 // Initialize socket listeners
@@ -291,11 +294,27 @@ initChat();
 
 const { state, visibleMessages, connect, sendMessage, updateName, lastError, fireworksSignal, cheersSignal } = useChat();
 
+const hasStarted = ref(false);
 const showMobileUserList = ref(false);
 const showContactModal = ref(false);
 const showFireworksText = ref(false);
 const showToast = ref(false);
 const toastMessage = ref('');
+
+const onStart = () => {
+  hasStarted.value = true;
+  // Update name in local storage is already done in Home.vue, 
+  // but we need to ensure the socket connection uses it or updates it.
+  // If we are already connected (which initChat might trigger), we should update name.
+  // But useChat connect() is manual.
+  
+  // Connect now
+  connect();
+  
+  // Wait for connection then update name? 
+  // actually useChat's connect listener handles updating name from localStorage.
+  // So we just need to ensure localStorage is set (Home does it) and then connect.
+};
 
 const copyText = async (text: string) => {
   try {
@@ -432,7 +451,8 @@ watch(fireworksSignal, () => {
 });
 
 onMounted(() => {
-  connect();
+  // Don't connect automatically
+  // connect(); 
   document.addEventListener('keydown', handleEscKey);
 });
 
