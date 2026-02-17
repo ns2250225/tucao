@@ -398,6 +398,24 @@
             </div>
           </div>
 
+          <!-- Voice Message -->
+          <div v-else-if="msg.type === 'voice'" class="w-full max-w-sm">
+             <div class="flex items-center gap-3 bg-white/50 p-2 rounded-clay backdrop-blur-sm">
+                <div class="bg-primary/10 p-2 rounded-full text-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <audio 
+                  controls 
+                  :src="msg.voice" 
+                  class="h-8 w-48 rounded-lg" 
+                  controlsList="nodownload"
+                ></audio>
+                <div class="text-xs text-gray-500 font-mono font-bold">{{ Math.round(msg.voiceDuration || 0) }}s</div>
+             </div>
+          </div>
+
           <div v-else-if="msg.text" class="text-base break-all whitespace-pre-wrap font-sans leading-relaxed" v-html="formatText(msg)"></div>
           <div class="text-[10px] opacity-50 mt-2 text-right font-mono">
             {{ formatTime(msg.timestamp) }}

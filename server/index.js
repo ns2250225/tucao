@@ -669,6 +669,28 @@ if (cluster.isPrimary) {
       io.emit('newMessage', message);
     });
 
+    // Handle send Voice
+    socket.on('sendVoice', async (payload) => {
+      const { voice, duration } = payload;
+      if (!voice) return;
+      
+      const user = await state.getUser(socket.id);
+
+      const message = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        text: '[语音消息]',
+        senderId: socket.id,
+        senderName: user?.name || '未知用户',
+        timestamp: Date.now(),
+        type: 'voice',
+        voice: voice,
+        voiceDuration: duration
+      };
+      
+      await state.addMessage(message);
+      io.emit('newMessage', message);
+    });
+
     // Handle new message
     socket.on('sendMessage', async (payload) => {
       let text = '', image = null, quote = null, mentions = [];

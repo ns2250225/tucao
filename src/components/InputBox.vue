@@ -192,6 +192,22 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
       </svg>
     </button>
+    
+    <button 
+      @mousedown="startRecording"
+      @mouseup="stopRecording"
+      @mouseleave="stopRecording"
+      @touchstart.prevent="startRecording"
+      @touchend.prevent="stopRecording"
+      class="w-full md:w-24 clay-button flex items-center justify-center gap-2 md:flex-col md:gap-1 group shrink-0 py-3 md:py-0 select-none touch-none"
+      :class="isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+    >
+      <span v-if="isRecording">{{ Math.ceil(30 - recordingDuration) }}s</span>
+      <span v-else>语音</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+      </svg>
+    </button>
   </div>
 
   <!-- Red Packet Modal -->
@@ -618,10 +634,68 @@ import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 import { useChat, type User } from '../composables/useChat';
 
-const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, createDiceGame, sendMusic, replyingTo, setReplyTo, state } = useChat();
+const { sendRedPacket, sendFireworks, sendLottery, createPoll, sendToast, createDiceGame, sendMusic, sendVoice, replyingTo, setReplyTo, state } = useChat();
 
 const isFireworksCoolingDown = ref(false);
 const isDiceCoolingDown = ref(false);
+
+// Voice Recording State
+const isRecording = ref(false);
+const recordingDuration = ref(0);
+let mediaRecorder: MediaRecorder | null = null;
+let audioChunks: Blob[] = [];
+let recordingTimer: any = null;
+
+const startRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        // Only send if duration > 0.5s to avoid accidental clicks
+        if (recordingDuration.value >= 0.5 || audioBlob.size > 1000) {
+           sendVoice(base64data, recordingDuration.value);
+        }
+      };
+      
+      stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorder.start();
+    isRecording.value = true;
+    recordingDuration.value = 0;
+    
+    recordingTimer = setInterval(() => {
+      recordingDuration.value += 0.1; // Update more frequently for UI
+      if (recordingDuration.value >= 30) {
+        stopRecording();
+      }
+    }, 100);
+    
+  } catch (err) {
+    console.error('Error accessing microphone:', err);
+    alert('无法访问麦克风，请检查权限设置');
+  }
+};
+
+const stopRecording = () => {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    isRecording.value = false;
+    clearInterval(recordingTimer);
+  }
+};
+
 
 const handleCreateDiceGame = () => {
   if (isDiceCoolingDown.value) return;

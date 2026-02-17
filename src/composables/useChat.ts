@@ -104,11 +104,13 @@ export interface Message {
   senderId: string;
   senderName: string;
   timestamp: number;
-  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast' | 'diceGame' | 'kickVote' | 'music';
+  type: 'user' | 'system' | 'redPacket' | 'lottery' | 'poll' | 'toast' | 'diceGame' | 'kickVote' | 'music' | 'voice';
   redPacketId?: string;
   lotteryId?: string;
   lotteryData?: LotteryData;
   musicData?: MusicData;
+  voice?: string;
+  voiceDuration?: number;
   pollId?: string;
   pollData?: PollData;
   toastId?: string;
@@ -393,6 +395,10 @@ export function useChat() {
     socket.emit('sendMusic', { musicData, text });
   };
 
+  const sendVoice = (voice: string, duration: number) => {
+    socket.emit('sendVoice', { voice, duration });
+  };
+
   // Filter messages older than 30 minutes
   const visibleMessages = computed(() => {
     const thirtyMinutesAgo = now.value - 30 * 60 * 1000;
@@ -421,6 +427,7 @@ export function useChat() {
     adminKick,
     voteKick,
     sendMusic,
+    sendVoice,
     lastGrabResult,
     lastError,
     fireworksSignal,
